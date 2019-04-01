@@ -1,9 +1,5 @@
 package packrat
 
-type Parser interface {
-	Match(s *Scanner) (*Scanner, Node)
-}
-
 type AtomParser struct {
 	str    string
 	skipWs bool

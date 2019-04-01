@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+type Parser interface {
+	Match(s *Scanner) (*Scanner, Node)
+}
+
 var emptyString = ""
 
 type Node struct {
