@@ -14,7 +14,6 @@ type Scanner struct {
 	input          string
 	remainingInput string
 	position       int
-	line           int
 	memoization    []map[Parser]scannerNode
 
 	skipRegex *regexp.Regexp
@@ -28,7 +27,7 @@ func (s *Scanner) Copy() *Scanner {
 var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
 
 func NewScanner(input string, skipWhitespace bool) *Scanner {
-	s := &Scanner{input: input, position: 0, line: 1, memoization: make([]map[Parser]scannerNode, len(input))}
+	s := &Scanner{input: input, position: 0, memoization: make([]map[Parser]scannerNode, len(input))}
 	for i := range s.input {
 		s.memoization[i] = make(map[Parser]scannerNode)
 	}
@@ -44,7 +43,6 @@ func (s *Scanner) updatePosition(reads string) {
 	if l > 0 {
 		s.remainingInput = s.remainingInput[l:]
 		s.position += l
-		s.line += strings.Count(reads, "\n")
 	}
 }
 
