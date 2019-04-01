@@ -3,7 +3,7 @@ package packrat
 import "testing"
 
 func TestJSON(t *testing.T) {
-	input := `{"hallo": "3", "welt": true, "subObject": {"hallo": 5}, "subArray": [1,2,3,4,5,6,7]}`
+	input := `{"hallo": "3", "welt": true, "subObject": {"hallo": 5}, "subArray": [1,2,3,4,5,6,7], "tek": "lel"}`
 	scanner := NewScanner(input, true)
 
 	stringParser := NewAndParser(NewAtomParser("\"", true), NewRegexParser(`(?:[^"\\]|\\\.)*`, false), NewAtomParser("\"", false))

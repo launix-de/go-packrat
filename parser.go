@@ -2,6 +2,7 @@ package packrat
 
 import (
 	"errors"
+	"strconv"
 )
 
 var emptyString = ""
@@ -18,7 +19,16 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, error) {
 		return &node, nil
 	}
 
-	return nil, errors.New("Parser did not match")
+	maxPos := -1
+	for index := len(originalScanner.memoization) - 1; index > 0; index-- {
+		m := originalScanner.memoization[index]
+		if len(m) > 0 {
+			maxPos = index
+			break
+		}
+	}
+
+	return nil, errors.New("Parser failed at position " + strconv.Itoa(maxPos))
 }
 
 func Parse(p Parser, originalScanner *Scanner) (*Node, error) {
@@ -31,5 +41,14 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, error) {
 		return &node, nil
 	}
 
-	return nil, errors.New("Parser did not match")
+	maxPos := -1
+	for index := len(originalScanner.memoization) - 1; index > 0; index-- {
+		m := originalScanner.memoization[index]
+		if len(m) > 0 {
+			maxPos = index
+			break
+		}
+	}
+
+	return nil, errors.New("Parser failed at position " + strconv.Itoa(maxPos))
 }
