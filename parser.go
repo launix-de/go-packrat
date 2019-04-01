@@ -23,7 +23,17 @@ type ParserError struct {
 }
 
 func (e *ParserError) Error() string {
-	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string)", e.Line, e.Column, e.Position)
+	startpos := e.Position - 1
+	if startpos < 0 {
+		startpos = 0
+	}
+
+	endpos := e.Position + 10
+	if endpos >= len(e.Input) {
+		endpos = len(e.Input) - 1
+	}
+	s := e.Input[startpos:endpos]
+	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string) near %s", e.Line, e.Column, e.Position, s)
 }
 
 func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
@@ -48,7 +58,7 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 	consumed := originalScanner.input[:maxPos]
 	line := strings.Count(consumed, "\n") + 1
 	column := maxPos - strings.LastIndex(consumed, "\n") + 1
-	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos}
+	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 	return nil, e
 }
 
@@ -60,7 +70,7 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 			consumed := originalScanner.input[:newScanner.position]
 			line := strings.Count(consumed, "\n") + 1
 			column := newScanner.position - strings.LastIndex(consumed, "\n") + 1
-			e := &ParserError{Parser: p, Line: line, Column: column, Position: newScanner.position}
+			e := &ParserError{Parser: p, Line: line, Column: column, Position: newScanner.position, Input: originalScanner.input}
 			return nil, e
 		}
 
@@ -83,6 +93,6 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 	consumed := originalScanner.input[:maxPos]
 	line := strings.Count(consumed, "\n") + 1
 	column := maxPos - strings.LastIndex(consumed, "\n") + 1
-	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos}
+	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 	return nil, e
 }
