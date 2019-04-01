@@ -14,6 +14,13 @@ func (p *MaybeParser) Set(embedded Parser) {
 
 // Match matches the embedded parser or the empty string.
 func (p *MaybeParser) Match(s *Scanner) (*Scanner, Node) {
+	startPosition := s.position
+	cached, wasCached := s.memoization[startPosition][p]
+	if wasCached {
+		nss, node := cached.Scanner, cached.Node
+		return nss, node
+	}
+
 	ns := s.Copy()
 	var (
 		nss  *Scanner
@@ -23,16 +30,21 @@ func (p *MaybeParser) Match(s *Scanner) (*Scanner, Node) {
 	if ns.position >= len(s.memoization) {
 		return nil, Node{}
 	}
-	cached, wasCached := ns.memoization[ns.position][p.subParser]
-	if wasCached {
-		nss, node = cached.Scanner, cached.Node
+	subCached, subWasCached := ns.memoization[ns.position][p.subParser]
+	if subWasCached {
+		nss, node = subCached.Scanner, subCached.Node
 	} else {
 		nss, node = p.subParser.Match(ns)
 		ns.memoization[ns.position][p.subParser] = scannerNode{Scanner: nss, Node: node}
 	}
 
+	var r scannerNode
 	if nss == nil {
-		return ns, Node{Matched: emptyString, Parser: p}
+		r = scannerNode{Scanner: ns, Node: Node{Matched: emptyString, Parser: p}}
+	} else {
+		r = scannerNode{Scanner: ns, Node: Node{Matched: node.Matched, Parser: p, Children: []Node{node}}}
 	}
-	return ns, Node{Matched: node.Matched, Parser: p, Children: []Node{node}}
+
+	s.memoization[startPosition][p] = r
+	return r.Scanner, r.Node
 }

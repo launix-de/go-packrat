@@ -15,7 +15,7 @@ func (p *ManyParser) Set(embedded Parser, separator Parser) {
 
 func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 	startPosition := s.position
-	cached, wasCached := s.memoization[s.position][p]
+	cached, wasCached := s.memoization[startPosition][p]
 	if wasCached {
 		nss, node := cached.Scanner, cached.Node
 		return nss, node
