@@ -40,11 +40,10 @@ func (p *AndParser) Match(s *Scanner) (*Scanner, Node) {
 		} else {
 			nss, node = c.Match(ns)
 			s.memoization[ns.position][c] = scannerNode{Scanner: nss, Node: node}
-
-			if nss == nil {
-				s.memoization[startPosition][p] = scannerNode{}
-				return nil, Node{}
-			}
+		}
+		if nss == nil {
+			s.memoization[startPosition][p] = scannerNode{}
+			return nil, Node{}
 		}
 
 		ns = nss

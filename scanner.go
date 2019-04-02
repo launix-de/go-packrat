@@ -20,8 +20,7 @@ type Scanner struct {
 }
 
 func (s *Scanner) Copy() *Scanner {
-	ns := *s
-	return &ns
+	return &Scanner{input: s.input, remainingInput: s.remainingInput, position: s.position, memoization: s.memoization, skipRegex: s.skipRegex}
 }
 
 var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
