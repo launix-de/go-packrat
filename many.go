@@ -55,7 +55,7 @@ func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 		if nss2.position >= len(s.memoization) {
 			break
 		}
-		cached, wasCached := s.memoization[nss2.position][p.subParser]
+		cached, wasCached := s.memoization[nss.position][p.subParser]
 
 		var (
 			node Node
@@ -87,5 +87,5 @@ func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 	}
 
 	s.memoization[startPosition][p] = r
-	return nil, Node{}
+	return r.Scanner, r.Node
 }
