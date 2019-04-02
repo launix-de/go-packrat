@@ -5,6 +5,10 @@ type EmptyParser struct {
 	skipWs    bool
 }
 
+func NewEmptyParser(subparser Parser) *EmptyParser {
+	return &EmptyParser{subParser: subparser}
+}
+
 // Set updates the embedded parser
 func (p *EmptyParser) Set(subParser Parser) {
 	p.subParser = subParser
