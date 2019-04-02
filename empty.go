@@ -29,17 +29,22 @@ func (p *EmptyParser) Match(os *Scanner) (*Scanner, Node) {
 		return nss, node
 	}
 
-	var node Node
-	subCached, subWasCached := s.memoization[startPosition][p.subParser]
-	if subWasCached {
-		node = subCached.Node
-		s = subCached.Scanner
-	} else {
-		s, node = p.Match(s)
-		s.memoization[startPosition][p.subParser] = scannerNode{Scanner: s, Node: node}
-	}
+	var r scannerNode
+	if p.subParser != nil {
+		var node Node
+		subCached, subWasCached := s.memoization[startPosition][p.subParser]
+		if subWasCached {
+			node = subCached.Node
+			s = subCached.Scanner
+		} else {
+			s, node = p.Match(s)
+			s.memoization[startPosition][p.subParser] = scannerNode{Scanner: s, Node: node}
+		}
 
-	r := scannerNode{Scanner: s, Node: Node{Matched: node.Matched, Children: []Node{node}, Parser: p}}
+		r = scannerNode{Scanner: s, Node: Node{Matched: node.Matched, Children: []Node{node}, Parser: p}}
+	} else {
+		r = scannerNode{Scanner: s, Node: Node{Matched: emptyString, Parser: p}}
+	}
 	os.memoization[startPosition][p] = r
 	if s != nil {
 		return r.Scanner, r.Node
