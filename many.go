@@ -65,10 +65,9 @@ func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 		} else {
 			nss2, node = p.subParser.Match(nss)
 			s.memoization[nss.position][p.subParser] = scannerNode{Scanner: nss2, Node: node}
-
-			if nss2 == nil {
-				break
-			}
+		}
+		if nss2 == nil {
+			break
 		}
 
 		if matchedsep {
