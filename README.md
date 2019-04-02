@@ -2,6 +2,7 @@ go-packrat
 ============================
 
 [![Build Status](https://travis-ci.com/launix-de/go-packrat.svg?branch=master)](https://travis-ci.com/launix-de/go-packrat)
+[![GoDoc](https://godoc.org/github.com/launix-de/go-packrat?status.png)](https://godoc.org/github.com/launix-de/go-packrat)
 
 
 This library allows to construct backtracking top down packrat parsers in Go using parser combination. Packrat parsing enables the parsing of PEG Grammars in linear time. Parsers are combinated using the following basic parsers:
