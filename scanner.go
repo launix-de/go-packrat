@@ -66,5 +66,7 @@ func (s *Scanner) MatchString(str string) *string {
 }
 
 func (s *Scanner) Skip() {
-	s.MatchRegexp(s.skipRegex)
+	if s.skipRegex != nil {
+		s.MatchRegexp(s.skipRegex)
+	}
 }
