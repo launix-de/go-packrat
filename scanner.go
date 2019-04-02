@@ -27,8 +27,8 @@ func (s *Scanner) Copy() *Scanner {
 var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
 
 func NewScanner(input string, skipWhitespace bool) *Scanner {
-	s := &Scanner{input: input, position: 0, memoization: make([]map[Parser]scannerNode, len(input))}
-	for i := range s.input {
+	s := &Scanner{input: input, position: 0, memoization: make([]map[Parser]scannerNode, len(input)+1)}
+	for i := 0; i < len(s.input)+1; i++ {
 		s.memoization[i] = make(map[Parser]scannerNode)
 	}
 	s.remainingInput = s.input
