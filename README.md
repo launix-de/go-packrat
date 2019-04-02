@@ -9,7 +9,7 @@ This library allows to construct backtracking top down packrat parsers in Go usi
 - `OrParser`: Matches if any of a given list of parsers matches
 - `KleeneParser`: Matches a parser 0 to `n` times, optionally separated by another parser
 - `ManyParser`: Matches a parser 1 to `n` times, optionally separated by another parser
-- `MaybeParser`: Matches a parser 0 or 1 time
+- `MaybeParser`: Matches a parser 0 or 1 times
 
 By default, `Atom` and `Regex` parsers skip (but do not match on) leading whitespace. This can be configured per parser.
 
@@ -43,4 +43,8 @@ func main(){
 
 Use case
 -----------
-Using this library, you can dynamically define and parse PEG grammars at runtime. Parsing time is proportional to the input length and grammar complexity. Note that if you do not need to build grammars at runtime, a parser generator like [gocc](https://github.com/goccmack/gocc) will produce a static LR parser that is both faster and uses less memory than `go-packrat`. If you want to use a parser combinator, worst-case exponential runtime is not a problem or low memory consumption is required, consider using [goparsec](https://github.com/prataprc/goparsec). `go-packrat` was written as a replacement for `goparsec` that solves the time complexity issue. 
+Using this library, you can dynamically define and parse PEG grammars at runtime. Parsing time is proportional to the input length and grammar complexity. Note that if you do not need to build grammars at runtime, a parser generator like [gocc](https://github.com/goccmack/gocc) will produce a static LR parser that is both faster and uses less memory than `go-packrat`. If you want to use a parser combinator, worst-case exponential runtime is not a problem or low memory consumption is required, consider using [goparsec](https://github.com/prataprc/goparsec). `go-packrat` was written as a replacement for `goparsec` that solves the time complexity issue using a simple memoizatino cache. 
+
+License
+------------
+Dual licensed with custom aggreements or GPLv3. See `LICENSE`.

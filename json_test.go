@@ -1,3 +1,10 @@
+/*
+	(c) 2019 Launix, Inh. Carl-Philip Hänsch
+	Author: Tim Kluge
+
+	Dual licensed with custom aggreements or GPLv3
+*/
+
 package packrat
 
 import "testing"
