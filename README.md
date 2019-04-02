@@ -17,14 +17,16 @@ This library allows to construct backtracking top down packrat parsers in Go usi
 
 By default, `Atom` and `Regex` parsers skip (but do not match on) leading whitespace. This can be configured per parser.
 
-If a parser matches, it returns an AST `*Node`. Every node points to the parser that produced it, the matched text, and a list of child nodes.
+If a parser matches, it returns an AST `*Node`. Every node points to the parser that produced it, the matched text, and a list of child nodes. AST callbacks are not provided atm, so a full AST traversal is needed to process the parse results.
+
+To construct recursive parsers, create parser combinators with `nil` as the sub parser. After creating the sub parser that itself uses the parent parser, use the `Set` function on the parent parser to update its children. The [JSON parser](./json_test.go) provides an example for this. Note that left recursion is not handled atm and will result in an endless descent.
 
 This library is currently used in production, but some rarely used features may be broken. Additional documentation is ToDo.
 
 Example
 -----------
 
-A full example in form of a working json parser is provided in `json_test.go`.
+A full example in form of a working json parser is provided in [json_test.go](./json_test.go).
 
 ```go
 import (
@@ -51,4 +53,4 @@ Using this library, you can dynamically define and parse PEG grammars at runtime
 
 License
 ------------
-Dual licensed with custom aggreements or GPLv3. See `LICENSE`.
+Dual licensed with custom aggreements or GPLv3. See [LICENSE](./LICENSE).
