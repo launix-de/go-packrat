@@ -22,7 +22,7 @@ Example
 
 A full example in form of a working json parser is provided in `json_test.go`.
 
-```
+```go
 import (
     packrat "github.com/launix-de/go-packrat"
 )
