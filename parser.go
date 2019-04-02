@@ -46,7 +46,7 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 		return &node, nil
 	}
 
-	maxPos := -1
+	maxPos := 0
 	var failedParsers []Parser
 	for index := len(originalScanner.memoization) - 1; index > 0; index-- {
 		m := originalScanner.memoization[index]
@@ -70,7 +70,6 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 	newScanner, node := p.Match(originalScanner)
 	if newScanner != nil {
 		if len(newScanner.remainingInput) > 0 {
-
 			consumed := originalScanner.input[:newScanner.position]
 			line := strings.Count(consumed, "\n") + 1
 			column := newScanner.position - strings.LastIndex(consumed, "\n") + 1
@@ -81,7 +80,7 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 		return &node, nil
 	}
 
-	maxPos := -1
+	maxPos := 0
 	var failedParsers []Parser
 	for index := len(originalScanner.memoization) - 1; index > 0; index-- {
 		m := originalScanner.memoization[index]
