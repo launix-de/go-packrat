@@ -8,6 +8,8 @@
 package packrat
 
 type EmptyParser struct {
+	// Stub field to prevent compiler from optimizing out &EmptyParser{}
+	_hidden bool
 }
 
 func NewEmptyParser() *EmptyParser {
