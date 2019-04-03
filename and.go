@@ -7,6 +7,8 @@
 
 package packrat
 
+import "strings"
+
 type AndParser struct {
 	subParser []Parser
 }
@@ -57,8 +59,11 @@ func (p *AndParser) Match(s *Scanner) (*Scanner, Node) {
 		nodes = append(nodes, node)
 	}
 
-	endPosition := ns.position
-	matched := ns.input[startPosition:endPosition]
+	b := strings.Builder{}
+	for _, n := range nodes {
+		b.WriteString(n.Matched)
+	}
+	matched := b.String()
 
 	r := scannerNode{Scanner: ns, Node: Node{Matched: matched, Parser: p, Children: nodes}}
 	s.memoization[startPosition][p] = r

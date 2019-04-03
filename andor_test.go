@@ -24,7 +24,7 @@ func TestAnd(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("And combinator creates node with wrong parser")
 		}
-		if n.Matched != input {
+		if n.Matched != "HelloWorld" {
 			t.Error("And combinator doesn't match complete input")
 		}
 	}

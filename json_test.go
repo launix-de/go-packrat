@@ -50,12 +50,8 @@ func TestJSON(t *testing.T) {
 	arrayParser := NewAndParser(NewAtomParser("[", true), NewKleeneParser(valueParser, NewAtomParser(",", true)), NewAtomParser("]", true))
 	valueParser.Set(nullParser, objParser, stringParser, numParser, boolParser, arrayParser)
 
-	n, err := Parse(valueParser, scanner)
+	_, err := Parse(valueParser, scanner)
 	if err != nil {
 		t.Error(err)
-	} else {
-		if n.Matched != input {
-			t.Error("JSON combinator doesn't match complete input")
-		}
 	}
 }

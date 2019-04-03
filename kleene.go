@@ -7,6 +7,8 @@
 
 package packrat
 
+import "strings"
+
 type KleeneParser struct {
 	subParser, sepParser Parser
 }
@@ -28,7 +30,6 @@ func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
 		return nss, node
 	}
 
-	startPosition := s.position
 	ns := s.Copy()
 	var nodes []Node
 
@@ -87,8 +88,11 @@ func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
 		ns = nss2
 	}
 
-	endPosition := ns.position
-	matched := ns.input[startPosition:endPosition]
+	b := strings.Builder{}
+	for _, n := range nodes {
+		b.WriteString(n.Matched)
+	}
+	matched := b.String()
 	r := scannerNode{Scanner: ns, Node: Node{Matched: matched, Parser: p, Children: nodes}}
 
 	s.memoization[s.position][p] = r

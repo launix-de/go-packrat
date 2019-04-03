@@ -7,6 +7,8 @@
 
 package packrat
 
+import "strings"
+
 type ManyParser struct {
 	subParser, sepParser Parser
 }
@@ -87,8 +89,11 @@ func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 
 	var r scannerNode
 	if len(nodes) >= 1 {
-		endPosition := ns.position
-		matched := ns.input[startPosition:endPosition]
+		b := strings.Builder{}
+		for _, n := range nodes {
+			b.WriteString(n.Matched)
+		}
+		matched := b.String()
 
 		r = scannerNode{Scanner: ns, Node: Node{Matched: matched, Parser: p, Children: nodes}}
 	}
