@@ -8,7 +8,6 @@
 package packrat
 
 type EmptyParser struct {
-	skipWs bool
 }
 
 func NewEmptyParser() *EmptyParser {
@@ -18,10 +17,6 @@ func NewEmptyParser() *EmptyParser {
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
 func (p *EmptyParser) Match(os *Scanner) (*Scanner, Node) {
 	s := os.Copy()
-	if p.skipWs {
-		s.Skip()
-	}
-
 	startPosition := s.position
 	cached, wasCached := s.memoization[startPosition][p]
 	if wasCached {

@@ -44,7 +44,7 @@ func TestManySeparator(t *testing.T) {
 }
 
 func TestManySeparatorRegex(t *testing.T) {
-	input := "23, 45"
+	input := "   23, 45"
 	scanner := NewScanner(input, true)
 
 	helloParser := NewRegexParser(`\d+`, true)
