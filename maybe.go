@@ -49,7 +49,7 @@ func (p *MaybeParser) Match(s *Scanner) (*Scanner, Node) {
 	if nss == nil {
 		r = scannerNode{Scanner: ns, Node: Node{Matched: emptyString, Parser: p}}
 	} else {
-		r = scannerNode{Scanner: ns, Node: Node{Matched: node.Matched, Parser: p, Children: []Node{node}}}
+		r = scannerNode{Scanner: nss, Node: Node{Matched: node.Matched, Parser: p, Children: []Node{node}}}
 	}
 
 	s.memoization[startPosition][p] = r
