@@ -10,7 +10,7 @@ package packrat
 import "testing"
 
 func TestKleene(t *testing.T) {
-	input := "HelloHelloHello"
+	input := "Hello Hello Hello"
 	scanner := NewScanner(input, true)
 
 	helloParser := NewAtomParser("Hello", true)
@@ -22,9 +22,6 @@ func TestKleene(t *testing.T) {
 	} else {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Kleene combinator creates node with wrong parser")
-		}
-		if n.Matched != input {
-			t.Error("Kleene combinator doesn't match complete input")
 		}
 		if len(n.Children) != 3 {
 			t.Error("Kleene combinator doesn't produce 3 children")

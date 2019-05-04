@@ -78,7 +78,7 @@ func TestManySeparatorRegex(t *testing.T) {
 }
 
 func TestMany(t *testing.T) {
-	input := "HelloHelloHello"
+	input := "Hello Hello Hello"
 	scanner := NewScanner(input, true)
 
 	helloParser := NewAtomParser("Hello", true)
@@ -90,9 +90,6 @@ func TestMany(t *testing.T) {
 	} else {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Many combinator creates node with wrong parser")
-		}
-		if n.Matched != input {
-			t.Error("Many combinator doesn't match complete input")
 		}
 		if len(n.Children) != 3 {
 			t.Error("Many combinator doesn't produce 3 children")

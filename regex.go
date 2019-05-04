@@ -23,9 +23,6 @@ func NewRegexParser(rs string, skipWs bool) *RegexParser {
 // Regex panics if rs is not a valid regex string.
 func (p *RegexParser) Match(os *Scanner) (*Scanner, Node) {
 	s := os.Copy()
-	if p.skipWs {
-		s.Skip()
-	}
 	opos := s.position
 
 	if opos >= len(s.memoization) {
@@ -36,13 +33,29 @@ func (p *RegexParser) Match(os *Scanner) (*Scanner, Node) {
 		return cached.Scanner, cached.Node
 	}
 
-	matched := s.MatchRegexp(p.regex)
-	if matched != nil {
-		r := scannerNode{Scanner: s, Node: Node{Matched: *matched, Parser: p}}
-		s.memoization[opos][p] = r
-		return r.Scanner, r.Node
+	if p.skipWs {
+		s.Skip()
+		if !s.isAtBreak() {
+			s.memoization[opos][p] = scannerNode{}
+			return nil, Node{}
+		}
 	}
 
-	s.memoization[opos][p] = scannerNode{}
-	return nil, Node{}
+
+	matched := s.MatchRegexp(p.regex)
+	if matched == nil {
+		s.memoization[s.position][p] = scannerNode{}
+		return nil, Node{}
+	}
+
+	if p.skipWs {
+		if !s.isAtBreak() {
+			s.memoization[opos][p] = scannerNode{}
+			return nil, Node{}
+		}
+	}
+
+	r := scannerNode{Scanner: s, Node: Node{Matched: *matched, Parser: p}}
+	s.memoization[opos][p] = r
+	return r.Scanner, r.Node
 }
