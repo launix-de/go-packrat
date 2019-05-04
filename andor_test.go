@@ -9,6 +9,26 @@ package packrat
 
 import "testing"
 
+
+func TestAndInsensitive(t *testing.T) {
+	input := "HELLO world"
+	scanner := NewScanner(input, true)
+
+	helloParser := NewAtomParser("Hello", true, true)
+	worldParser := NewAtomParser("World", true, true)
+	helloAndWorldParser := NewAndParser(helloParser, worldParser)
+
+	n, err := Parse(helloAndWorldParser, scanner)
+	if err != nil {
+		t.Error(err)
+	} else {
+		if n.Parser != helloAndWorldParser {
+			t.Error("And combinator creates node with wrong parser")
+		}
+	}
+}
+
+
 func TestAnd(t *testing.T) {
 	input := "Hello World"
 	scanner := NewScanner(input, true)
