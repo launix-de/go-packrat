@@ -10,14 +10,18 @@ package packrat
 import "regexp"
 
 type AtomParser struct {
-	str    string
+	r    *regexp.Regexp
 	skipWs bool
-
-	regex *regexp.Regexp
 }
 
-func NewAtomParser(str string, skipWs bool) *AtomParser {
-	p := &AtomParser{str: str, skipWs: skipWs}
+func NewAtomParser(str string, caseInsensitive bool, skipWs bool) *AtomParser {
+	prefix := ""
+	if caseInsensitive {
+		prefix += "(?i)"
+	}
+	prefix += "^"
+	r := regexp.MustCompile(prefix + regexp.QuoteMeta(str))
+	p := &AtomParser{skipWs: skipWs, r: r}	
 	return p
 }
 
@@ -43,7 +47,7 @@ func (p *AtomParser) Match(os *Scanner) (*Scanner, Node) {
 		}
 	}
 
-	matched := s.MatchString(p.str)
+	matched := s.MatchRegexp(p.r)
 	if matched == nil {
 		s.memoization[opos][p] = scannerNode{}
 		return nil, Node{}
@@ -56,7 +60,7 @@ func (p *AtomParser) Match(os *Scanner) (*Scanner, Node) {
 		}
 	}
 
-	r := scannerNode{Scanner: s, Node: Node{Matched: p.str, Parser: p}}
+	r := scannerNode{Scanner: s, Node: Node{Matched: *matched, Parser: p}}
 	s.memoization[opos][p] = r
 	return r.Scanner, r.Node
 }

@@ -13,8 +13,8 @@ func TestAnd(t *testing.T) {
 	input := "Hello World"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewAtomParser("Hello", true)
-	worldParser := NewAtomParser("World", true)
+	helloParser := NewAtomParser("Hello", false, true)
+	worldParser := NewAtomParser("World", false, true)
 	helloAndWorldParser := NewAndParser(helloParser, worldParser)
 
 	n, err := Parse(helloAndWorldParser, scanner)
@@ -43,8 +43,8 @@ func TestOr(t *testing.T) {
 	input := "World"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewAtomParser("Hello", true)
-	worldParser := NewAtomParser("World", true)
+	helloParser := NewAtomParser("Hello", false, true)
+	worldParser := NewAtomParser("World", false, true)
 	helloAndWorldParser := NewOrParser(helloParser, worldParser)
 
 	n, err := Parse(helloAndWorldParser, scanner)

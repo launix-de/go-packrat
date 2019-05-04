@@ -13,7 +13,7 @@ func TestRegex(t *testing.T) {
 	input := "-3.4"
 	scanner := NewScanner(input, true)
 
-	numParser := NewRegexParser("-?\\d+\\.\\d+", false)
+	numParser := NewRegexParser("-?\\d+\\.\\d+", false, false)
 
 	_, err := Parse(numParser, scanner)
 	if err != nil {

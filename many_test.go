@@ -13,8 +13,8 @@ func TestManySeparator(t *testing.T) {
 	input := "Hello, Hello"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewAtomParser("Hello", true)
-	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", true))
+	helloParser := NewAtomParser("Hello", false, true)
+	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
@@ -35,7 +35,7 @@ func TestManySeparator(t *testing.T) {
 	}
 
 	irregularScanner := NewScanner("Hello, Hello, Hello, ", true)
-	irregularParser := NewManyParser(helloParser, NewAtomParser(",", true))
+	irregularParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
 
 	_, ierr := Parse(irregularParser, irregularScanner)
 	if ierr == nil {
@@ -47,8 +47,8 @@ func TestManySeparatorRegex(t *testing.T) {
 	input := "   23, 45"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewRegexParser(`\d+`, true)
-	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", true))
+	helloParser := NewRegexParser(`\d+`, false, true)
+	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
@@ -69,7 +69,7 @@ func TestManySeparatorRegex(t *testing.T) {
 	}
 
 	irregularScanner := NewScanner("Hello, Hello, Hello, ", true)
-	irregularParser := NewManyParser(helloParser, NewAtomParser(",", true))
+	irregularParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
 
 	_, ierr := Parse(irregularParser, irregularScanner)
 	if ierr == nil {
@@ -81,7 +81,7 @@ func TestMany(t *testing.T) {
 	input := "Hello Hello Hello"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewAtomParser("Hello", true)
+	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewManyParser(helloParser, nil)
 
 	n, err := Parse(helloAndWorldParser, scanner)

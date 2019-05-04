@@ -14,8 +14,13 @@ type RegexParser struct {
 	skipWs bool
 }
 
-func NewRegexParser(rs string, skipWs bool) *RegexParser {
-	r := regexp.MustCompile("^" + rs)
+func NewRegexParser(rs string, caseInsensitive bool, skipWs bool) *RegexParser {
+	prefix := ""
+	if caseInsensitive {
+		prefix += "(?i)"
+	}
+	prefix += "^"
+	r := regexp.MustCompile(prefix + rs)
 	return &RegexParser{regex: r, skipWs: skipWs}
 }
 

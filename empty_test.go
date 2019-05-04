@@ -7,7 +7,7 @@ func TestEmptyParser(t *testing.T) {
 	scanner := NewScanner(input, true)
 
 	emptyParser := NewEmptyParser()
-	helloParser := NewAtomParser("Hello", true)
+	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewAndParser(emptyParser, helloParser)
 
 	n, err := Parse(helloAndWorldParser, scanner)

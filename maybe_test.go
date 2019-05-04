@@ -12,7 +12,7 @@ func TestMaybe(t *testing.T) {
 	input := "Hello"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewAtomParser("Hello", true)
+	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewMaybeParser(helloParser)
 
 	n, err := ParsePartial(helloAndWorldParser, scanner)

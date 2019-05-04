@@ -39,15 +39,15 @@ func TestJSON(t *testing.T) {
 	}}`
 	scanner := NewScanner(input, true)
 
-	stringParser := NewAndParser(NewAtomParser(`"`, true), NewRegexParser(`(?:[^"\\]|\\.)*`, false), NewAtomParser(`"`, false))
+	stringParser := NewAndParser(NewAtomParser(`"`, false, true), NewRegexParser(`(?:[^"\\]|\\.)*`, false, false), NewAtomParser(`"`, false, false))
 	valueParser := NewOrParser(nil)
-	propParser := NewAndParser(stringParser, NewAtomParser(":", true), valueParser)
+	propParser := NewAndParser(stringParser, NewAtomParser(":", false, true), valueParser)
 
-	objParser := NewAndParser(NewAtomParser("{", true), NewKleeneParser(propParser, NewAtomParser(",", true)), NewAtomParser("}", true))
-	nullParser := NewAtomParser("null", true)
-	numParser := NewRegexParser(`-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?`, true)
-	boolParser := NewRegexParser("(true|false)", true)
-	arrayParser := NewAndParser(NewAtomParser("[", true), NewKleeneParser(valueParser, NewAtomParser(",", true)), NewAtomParser("]", true))
+	objParser := NewAndParser(NewAtomParser("{", false, true), NewKleeneParser(propParser, NewAtomParser(",", false, true)), NewAtomParser("}", false, true))
+	nullParser := NewAtomParser("null", false, true)
+	numParser := NewRegexParser(`-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?`, false, true)
+	boolParser := NewRegexParser("(true|false)", false, true)
+	arrayParser := NewAndParser(NewAtomParser("[", false, true), NewKleeneParser(valueParser, NewAtomParser(",", false, true)), NewAtomParser("]", false, true))
 	valueParser.Set(nullParser, objParser, stringParser, numParser, boolParser, arrayParser)
 
 	_, err := Parse(valueParser, scanner)

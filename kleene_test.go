@@ -13,7 +13,7 @@ func TestKleene(t *testing.T) {
 	input := "Hello Hello Hello"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewAtomParser("Hello", true)
+	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewKleeneParser(helloParser, nil)
 
 	n, err := Parse(helloAndWorldParser, scanner)
@@ -44,8 +44,8 @@ func TestKleeneSeparator(t *testing.T) {
 	input := "Hello, Hello, Hello"
 	scanner := NewScanner(input, true)
 
-	helloParser := NewAtomParser("Hello", true)
-	sepParser := NewAtomParser(",", true)
+	helloParser := NewAtomParser("Hello", false, true)
+	sepParser := NewAtomParser(",", false, true)
 	helloAndWorldParser := NewKleeneParser(helloParser, sepParser)
 
 	n, err := Parse(helloAndWorldParser, scanner)

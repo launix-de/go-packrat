@@ -10,7 +10,6 @@ package packrat
 import (
 	"unicode"
 	"regexp"
-	"strings"
 )
 
 type scannerNode struct {
@@ -79,15 +78,6 @@ func (s *Scanner) MatchRegexp(r *regexp.Regexp) *string {
 	if matched != nil {
 		s.updatePosition(matched[0])
 		return &matched[0]
-	}
-
-	return nil
-}
-
-func (s *Scanner) MatchString(str string) *string {
-	if strings.HasPrefix(s.remainingInput, str) {
-		s.updatePosition(str)
-		return &str
 	}
 
 	return nil
