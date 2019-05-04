@@ -8,6 +8,7 @@
 package packrat
 
 import (
+	"unicode"
 	"regexp"
 	"strings"
 )
@@ -22,15 +23,18 @@ type Scanner struct {
 	remainingInput string
 	position       int
 	memoization    []map[Parser]scannerNode
+	breaks []bool
 
 	skipRegex *regexp.Regexp
 }
 
 func (s *Scanner) Copy() *Scanner {
-	return &Scanner{input: s.input, remainingInput: s.remainingInput, position: s.position, memoization: s.memoization, skipRegex: s.skipRegex}
+	ns := *s
+	return &ns
 }
 
 var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
+var blockbreakRegex = regexp.MustCompile(`\b`)
 
 func NewScanner(input string, skipWhitespace bool) *Scanner {
 	s := &Scanner{input: input, position: 0, memoization: make([]map[Parser]scannerNode, len(input)+1)}
@@ -41,7 +45,25 @@ func NewScanner(input string, skipWhitespace bool) *Scanner {
 	if skipWhitespace {
 		s.skipRegex = skipWhitespaceRegex
 	}
+	breaks := make([]bool, len(input)+1)
+	
+	previousWord := false
+	for pos, r := range input {
+		currentWord := unicode.In(r, unicode.N, unicode.L, unicode.Pc)
+		if !currentWord || !previousWord {
+			breaks[pos] = true
+		}
+
+		previousWord = currentWord
+	}
+	breaks[len(input)] = true
+	s.breaks = breaks
+
 	return s
+}
+
+func (s *Scanner) isAtBreak() bool {
+	return s.breaks[s.position]
 }
 
 func (s *Scanner) updatePosition(reads string) {
