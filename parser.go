@@ -16,6 +16,50 @@ type Parser interface {
 	Match(s *Scanner) (*Scanner, Node)
 }
 
+
+func match(os *Scanner, p Parser) (*Scanner, Node){
+	startPosition := os.position
+	if os.position >= len(os.memoization) {
+		os.memoization[startPosition][p] = scannerNode{}
+		return nil, Node{}
+	}
+
+	cached, wasCached := os.memoization[startPosition][p]
+	if wasCached {
+		if cached.Scanner == nil {
+			os.memoization[startPosition][p] = cached
+		}
+		nss, node := cached.Scanner, cached.Node
+		return nss, node
+	}
+
+	// Wenn das der erste probierte
+	var triedParsers map[Parser]bool  
+	triedParsers = os.triedParsers[startPosition]
+	if triedParsers == nil {
+		triedParsers = make(map[Parser]bool)
+		os.triedParsers[startPosition] = triedParsers
+	}
+	_, alreadyTried := triedParsers[p]
+	if alreadyTried {
+		if os.lrDetected != nil && os.lrDetected != p {
+			panic("Indirect left recursion is not supported")
+		}
+		os.lrDetected = p
+		fmt.Println("Left recursion detected!")
+
+		// Ablehnen, damit der Samen angelegt werden kann
+		return nil, Node{}
+	}
+	triedParsers[p] = true
+
+	s := os.Copy()
+	ns, n := p.Match(s)
+	s.memoization[startPosition][p] = scannerNode{Scanner: ns, Node: n}
+
+	return ns, n
+}
+
 var emptyString = ""
 
 type Node struct {
