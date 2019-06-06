@@ -83,9 +83,9 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 
 	maxPos := 0
 	var failedParsers []Parser
-	for index := len(originalScanner.memoization) - 1; index > 0; index-- {
-		m := originalScanner.memoization[index]
-		if len(m) > 0 {
+	for index := len(originalScanner.input) - 1; index > 0; index-- {
+		m, mExists := originalScanner.memoization[index]
+		if mExists && len(m) > 0 {
 			maxPos = index
 			for k := range m {
 				failedParsers = append(failedParsers, k)
