@@ -29,33 +29,10 @@ func (p *OrParser) Match(s *Scanner) (*Scanner, Node) {
 	}
 
 	for _, c := range p.subParser {
-		ns := s.Copy()
-
-		if ns.position >= len(s.memoization) {
-			return nil, Node{}
+		ns, node := match(s, c)
+		if ns != nil {
+			return ns, Node{Matched: node.Matched, Parser: p, Children: []Node{node}}
 		}
-		cached, wasCached := ns.memoization[ns.position][c]
-		if wasCached {
-			nss, node := cached.Scanner, cached.Node
-			if nss == nil {
-				continue
-			}
-
-			r := scannerNode{Scanner: nss, Node: Node{Matched: node.Matched, Parser: p, Children: []Node{node}}}
-			s.memoization[s.position][p] = r
-			return r.Scanner, r.Node
-		}
-
-		nss, node := c.Match(ns)
-		s.memoization[ns.position][c] = scannerNode{Scanner: nss, Node: node}
-
-		if nss == nil {
-			continue
-		}
-
-		r := scannerNode{Scanner: nss, Node: Node{Matched: node.Matched, Parser: p, Children: []Node{node}}}
-		s.memoization[startposition][p] = r
-		return r.Scanner, r.Node
 	}
 
 	return nil, Node{}

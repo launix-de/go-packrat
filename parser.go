@@ -48,7 +48,7 @@ func (e *ParserError) Error() string {
 }
 
 func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	newScanner, node := p.Match(originalScanner)
+	newScanner, node := match(originalScanner, p)
 	if newScanner != nil {
 		return &node, nil
 	}
@@ -74,7 +74,7 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 }
 
 func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	newScanner, node := p.Match(originalScanner)
+	newScanner, node := match(originalScanner, p)
 	if newScanner != nil {
 		if len(newScanner.remainingInput) > 0 {
 			consumed := originalScanner.input[:newScanner.position]

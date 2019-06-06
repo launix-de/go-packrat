@@ -16,10 +16,8 @@ func NewEndParser(skipWs bool) *EndParser {
 }
 
 // Match accepts only the end of the scanner's input and will not match any input.
-func (p *EndParser) Match(os *Scanner) (*Scanner, Node) {
-	s := os
+func (p *EndParser) Match(s *Scanner) (*Scanner, Node) {
 	if p.skipWs {
-		s = s.Copy()
 		s.Skip()
 	}
 

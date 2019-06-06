@@ -26,22 +26,10 @@ func NewRegexParser(rs string, caseInsensitive bool, skipWs bool) *RegexParser {
 
 // Regex matches only the given regexp. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
 // Regex panics if rs is not a valid regex string.
-func (p *RegexParser) Match(os *Scanner) (*Scanner, Node) {
-	s := os.Copy()
-	opos := s.position
-
-	if opos >= len(s.memoization) {
-		return nil, Node{}
-	}
-	cached, wasCached := s.memoization[opos][p]
-	if wasCached {
-		return cached.Scanner, cached.Node
-	}
-
+func (p *RegexParser) Match(s *Scanner) (*Scanner, Node) {
 	if p.skipWs {
 		s.Skip()
 		if !s.isAtBreak() {
-			s.memoization[opos][p] = scannerNode{}
 			return nil, Node{}
 		}
 	}
@@ -49,18 +37,14 @@ func (p *RegexParser) Match(os *Scanner) (*Scanner, Node) {
 
 	matched := s.MatchRegexp(p.regex)
 	if matched == nil {
-		s.memoization[s.position][p] = scannerNode{}
 		return nil, Node{}
 	}
 
 	if p.skipWs {
 		if !s.isAtBreak() {
-			s.memoization[opos][p] = scannerNode{}
 			return nil, Node{}
 		}
 	}
 
-	r := scannerNode{Scanner: s, Node: Node{Matched: *matched, Parser: p}}
-	s.memoization[opos][p] = r
-	return r.Scanner, r.Node
+	return s, Node{Matched: *matched, Parser: p}
 }
