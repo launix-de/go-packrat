@@ -47,6 +47,34 @@ func (e *ParserError) Error() string {
 	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string) near %s", e.Line, e.Column, e.Position, s)
 }
 
+func match(os *Scanner, p Parser) (*Scanner, Node){
+	startPosition := os.position 
+	if os.position >= len(os.input) {
+		return nil, Node{} 
+	}
+	
+	m, mExists := os.memoization[startPosition]
+	if !mExists {
+		m = make(map[Parser]scannerNode)
+		os.memoization[startPosition] = m
+	}
+
+	cached, wasCached := m[p]
+	if wasCached {
+		if cached.Scanner == nil {
+			m[p] = cached
+		}
+		nss, node := cached.Scanner, cached.Node
+		return nss, node
+	}
+
+	s := os.Copy()
+	ns, n := p.Match(s)
+	m[p] = scannerNode{Scanner: ns, Node: n}
+
+	return ns, n
+}
+
 func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 	newScanner, node := match(originalScanner, p)
 	if newScanner != nil {

@@ -21,7 +21,7 @@ type Scanner struct {
 	input          string
 	remainingInput string
 	position       int
-	memoization    []map[Parser]scannerNode
+	memoization    map[int]map[Parser]scannerNode
 	breaks []bool
 
 	skipRegex *regexp.Regexp
@@ -36,10 +36,7 @@ var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
 var blockbreakRegex = regexp.MustCompile(`\b`)
 
 func NewScanner(input string, skipWhitespace bool) *Scanner {
-	s := &Scanner{input: input, position: 0, memoization: make([]map[Parser]scannerNode, len(input)+1)}
-	for i := 0; i < len(s.input)+1; i++ {
-		s.memoization[i] = make(map[Parser]scannerNode)
-	}
+	s := &Scanner{input: input, position: 0, memoization: make(map[int]map[Parser]scannerNode)}
 	s.remainingInput = s.input
 	if skipWhitespace {
 		s.skipRegex = skipWhitespaceRegex
