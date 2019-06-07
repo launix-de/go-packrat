@@ -47,12 +47,9 @@ func (e *ParserError) Error() string {
 	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string) near %s", e.Line, e.Column, e.Position, s)
 }
 
-func match(os *Scanner, p Parser) (*Scanner, Node){
-	startPosition := os.position 
-	if os.position >= len(os.input) {
-		return nil, Node{} 
-	}
-	
+func match(os *Scanner, p Parser) (*Scanner, Node) {
+	startPosition := os.position
+
 	m, mExists := os.memoization[startPosition]
 	if !mExists {
 		m = make(map[Parser]scannerNode)

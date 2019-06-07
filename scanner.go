@@ -8,8 +8,8 @@
 package packrat
 
 import (
-	"unicode"
 	"regexp"
+	"unicode"
 )
 
 type scannerNode struct {
@@ -22,7 +22,7 @@ type Scanner struct {
 	remainingInput string
 	position       int
 	memoization    map[int]map[Parser]scannerNode
-	breaks []bool
+	breaks         []bool
 
 	skipRegex *regexp.Regexp
 }
@@ -42,7 +42,7 @@ func NewScanner(input string, skipWhitespace bool) *Scanner {
 		s.skipRegex = skipWhitespaceRegex
 	}
 	breaks := make([]bool, len(input)+1)
-	
+
 	previousWord := false
 	for pos, r := range input {
 		currentWord := unicode.In(r, unicode.N, unicode.L, unicode.Pc)
