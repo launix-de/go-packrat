@@ -21,13 +21,6 @@ func (p *OrParser) Set(embedded ...Parser) {
 
 // Match matches all given parsers sequentially.
 func (p *OrParser) Match(s *Scanner) (*Scanner, Node) {
-	startposition := s.position
-	cached, wasCached := s.memoization[startposition][p]
-	if wasCached {
-		nss, node := cached.Scanner, cached.Node
-		return nss, node
-	}
-
 	for _, c := range p.subParser {
 		ns, node := match(s, c)
 		if ns != nil {
