@@ -22,7 +22,7 @@ type Scanner struct {
 	remainingInput string
 	position       int
 	memoization    map[int]map[Parser]scannerNode
-	breaks         []bool
+	breaks         map[int]bool
 
 	skipRegex *regexp.Regexp
 }
@@ -41,19 +41,18 @@ func NewScanner(input string, skipWhitespace bool) *Scanner {
 	if skipWhitespace {
 		s.skipRegex = skipWhitespaceRegex
 	}
-	breaks := make([]bool, len(input)+1)
+	s.breaks = make(map[int]bool)
 
 	previousWord := false
 	for pos, r := range input {
 		currentWord := unicode.In(r, unicode.N, unicode.L, unicode.Pc)
 		if !currentWord || !previousWord {
-			breaks[pos] = true
+			s.breaks[pos] = true
 		}
 
 		previousWord = currentWord
 	}
-	breaks[len(input)] = true
-	s.breaks = breaks
+	s.breaks[len(input)] = true
 
 	return s
 }
