@@ -7,6 +7,8 @@
 
 package packrat
 
+import "strings"
+
 type OrParser struct {
 	subParser []Parser
 }
@@ -17,6 +19,14 @@ func NewOrParser(subparser ...Parser) *OrParser {
 
 func (p *OrParser) Set(embedded ...Parser) {
 	p.subParser = embedded
+}
+
+func (p *OrParser) Description(stack map[Parser]bool) string {
+	b := strings.Builder{}
+	b.WriteString("Or(")
+	b.WriteString(writeDebug(p, stack, p.subParser...))
+	b.WriteString(")")
+	return b.String()
 }
 
 // Match matches all given parsers sequentially.

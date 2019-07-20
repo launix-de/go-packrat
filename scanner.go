@@ -13,33 +13,35 @@ import (
 )
 
 type scannerNode struct {
-	LrDetected bool
 	Scanner *Scanner
 	Node    Node
 }
 
-type Scanner struct { 
-	input          string
-	remainingInput string
-	position       int
-	memoization    map[int]map[Parser]scannerNode
-	triedParsers	map[int]map[Parser]bool
-	lrDetected Parser
-	breaks         map[int]bool
+type Scanner struct {
+	input           string
+	remainingInput  string
+	position        int
+	memoization     map[int]map[Parser]scannerNode
+	invocationStack []Parser
+	breaks          map[int]bool
 
 	skipRegex *regexp.Regexp
 }
 
+// Copy clones the scanner state. Memoization and break maps are shared
 func (s *Scanner) Copy() *Scanner {
 	ns := *s
+
+	ns.invocationStack = make([]Parser, len(s.invocationStack))
+	copy(ns.invocationStack, s.invocationStack)
+
 	return &ns
 }
 
 var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
-var blockbreakRegex = regexp.MustCompile(`\b`)
 
 func NewScanner(input string, skipWhitespace bool) *Scanner {
-	s := &Scanner{input: input, position: 0, memoization: make(map[int]map[Parser]scannerNode), triedParsers: make(map[int]map[Parser]bool)}
+	s := &Scanner{input: input, position: 0, memoization: make(map[int]map[Parser]scannerNode)}
 	s.remainingInput = s.input
 	if skipWhitespace {
 		s.skipRegex = skipWhitespaceRegex
@@ -55,6 +57,7 @@ func NewScanner(input string, skipWhitespace bool) *Scanner {
 
 		previousWord = currentWord
 	}
+
 	s.breaks[len(input)] = true
 
 	return s
@@ -64,18 +67,15 @@ func (s *Scanner) isAtBreak() bool {
 	return s.breaks[s.position]
 }
 
-func (s *Scanner) updatePosition(reads string) {
-	l := len(reads)
-	if l > 0 {
-		s.remainingInput = s.remainingInput[l:]
-		s.position += l
-	}
+func (s *Scanner) move(n int) {
+	s.position += n
+	s.remainingInput = s.input[s.position:]
 }
 
 func (s *Scanner) MatchRegexp(r *regexp.Regexp) *string {
 	matched := r.FindStringSubmatch(s.remainingInput)
 	if matched != nil {
-		s.updatePosition(matched[0])
+		s.move(len(matched[0]))
 		return &matched[0]
 	}
 

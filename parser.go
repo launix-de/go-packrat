@@ -9,32 +9,34 @@ package packrat
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 type Parser interface {
 	Match(s *Scanner) (*Scanner, Node)
+	Description(visited map[Parser]bool) string
 }
 
-
-func match(os *Scanner, p Parser) (*Scanner, Node){
+func match(os *Scanner, p Parser) (*Scanner, Node) {
 	startPosition := os.position
-	if os.position >= len(os.memoization) {
-		os.memoization[startPosition][p] = scannerNode{}
-		return nil, Node{}
+
+	m, mExists := os.memoization[startPosition]
+	if !mExists {
+		m = make(map[Parser]scannerNode)
+		os.memoization[startPosition] = m
 	}
 
-	cached, wasCached := os.memoization[startPosition][p]
+	cached, wasCached := m[p]
 	if wasCached {
 		if cached.Scanner == nil {
-			os.memoization[startPosition][p] = cached
+			m[p] = cached
 		}
 		nss, node := cached.Scanner, cached.Node
 		return nss, node
 	}
 
-	// Wenn das der erste probierte
-	var triedParsers map[Parser]bool  
+	var triedParsers map[Parser]bool
 	triedParsers = os.triedParsers[startPosition]
 	if triedParsers == nil {
 		triedParsers = make(map[Parser]bool)
@@ -42,11 +44,13 @@ func match(os *Scanner, p Parser) (*Scanner, Node){
 	}
 	_, alreadyTried := triedParsers[p]
 	if alreadyTried {
-		if os.lrDetected != nil && os.lrDetected != p {
+		if os.lrDetected.Parser != nil && os.lrDetected.Parser != p {
 			panic("Indirect left recursion is not supported")
 		}
-		os.lrDetected = p
-		fmt.Println("Left recursion detected!")
+		os.lrDetected.Parser = p
+		os.lrDetected.StartPos = os.position
+		visited := make(map[Parser]bool)
+		fmt.Println("Left recursion detected at pos " + strconv.Itoa(os.position) + ": " + os.lrDetected.Parser.Description(visited))
 
 		// Ablehnen, damit der Samen angelegt werden kann
 		return nil, Node{}
@@ -55,8 +59,35 @@ func match(os *Scanner, p Parser) (*Scanner, Node){
 
 	s := os.Copy()
 	ns, n := p.Match(s)
-	s.memoization[startPosition][p] = scannerNode{Scanner: ns, Node: n}
 
+	/**
+	Term -> Term "-" Term / Num
+	Num -> \d+
+
+	5 - 4 - 3
+	*/
+
+	m[p] = scannerNode{Scanner: ns, Node: n}
+
+	if os.lrDetected.Parser != nil && os.lrDetected.Parser == p && !os.lrDetected.InDescent {
+		// lp := ns.lrDetected
+		fmt.Println("Outer left recursion: " + n.Matched)
+
+		// Jetzt den Samen wachsen lassen - den Parser immer wieder aufrufen, bis er nicht mehr voran kommt
+		//		changedPosition := false
+
+		nns := ns.Copy()
+		nns.lrDetected.InDescent = false
+		for {
+			nns.move(-(nns.position - s.lrDetected.StartPos))
+			nns2, n2 := match(nns, p)
+
+			if nns2 == nil {
+				return nns, n
+			}
+			nns, n = nns2, n2
+		}
+	}
 	return ns, n
 }
 
@@ -89,31 +120,6 @@ func (e *ParserError) Error() string {
 	}
 	s := e.Input[startpos:endpos]
 	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string) near %s", e.Line, e.Column, e.Position, s)
-}
-
-func match(os *Scanner, p Parser) (*Scanner, Node) {
-	startPosition := os.position
-
-	m, mExists := os.memoization[startPosition]
-	if !mExists {
-		m = make(map[Parser]scannerNode)
-		os.memoization[startPosition] = m
-	}
-
-	cached, wasCached := m[p]
-	if wasCached {
-		if cached.Scanner == nil {
-			m[p] = cached
-		}
-		nss, node := cached.Scanner, cached.Node
-		return nss, node
-	}
-
-	s := os.Copy()
-	ns, n := p.Match(s)
-	m[p] = scannerNode{Scanner: ns, Node: n}
-
-	return ns, n
 }
 
 func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
@@ -173,5 +179,26 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 	line := strings.Count(consumed, "\n") + 1
 	column := maxPos - strings.LastIndex(consumed, "\n") + 1
 	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
+
 	return nil, e
+}
+
+func writeDebug(p Parser, stack map[Parser]bool, subs ...Parser) string {
+	stack[p] = true
+	b := strings.Builder{}
+
+	for i, s := range subs {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		subVisited := stack[s]
+		if subVisited {
+			b.WriteString("--- parent ---")
+		} else {
+			b.WriteString(s.Description(stack))
+		}
+	}
+
+	stack[p] = false
+	return b.String()
 }

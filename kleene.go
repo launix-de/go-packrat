@@ -22,6 +22,14 @@ func (p *KleeneParser) Set(embedded Parser, separator Parser) {
 	p.sepParser = separator
 }
 
+func (p *KleeneParser) Description(stack map[Parser]bool) string {
+	b := strings.Builder{}
+	b.WriteString("Kleene(")
+	b.WriteString(writeDebug(p, stack, p.subParser, p.sepParser))
+	b.WriteString(")")
+	return b.String()
+}
+
 // Match matches the embedded parser or the empty string.
 func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
 	var nodes []Node
@@ -61,6 +69,6 @@ func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
 		b.WriteString(n.Matched)
 	}
 	matched := b.String()
-	
+
 	return s, Node{Matched: matched, Parser: p, Children: nodes}
 }

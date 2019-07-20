@@ -3,7 +3,7 @@ package packrat
 import "testing"
 
 func TestLeftRecursion(t *testing.T) {
-	input := "5 - 3 - 1"
+	input := "5 - 1 - 4"
 	scanner := NewScanner(input, true)
 
 	numParser := NewRegexParser(`\d+`, false, true)
@@ -11,9 +11,9 @@ func TestLeftRecursion(t *testing.T) {
 
 	termParser := NewAndParser()
 	exprParser := NewOrParser(termParser, numParser)
-	termParser.Set(termParser, minusParser, numParser)
+	termParser.Set(exprParser, minusParser, numParser)
 
-	n, err := Parse(exprParser, scanner)
+	n, err := Parse(termParser, scanner)
 	if err != nil {
 		t.Error(err)
 	} else {

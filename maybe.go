@@ -7,6 +7,8 @@
 
 package packrat
 
+import "strings"
+
 type MaybeParser struct {
 	subParser Parser
 }
@@ -17,6 +19,14 @@ func NewMaybeParser(subparser Parser) *MaybeParser {
 
 func (p *MaybeParser) Set(embedded Parser) {
 	p.subParser = embedded
+}
+
+func (p *MaybeParser) Description(stack map[Parser]bool) string {
+	b := strings.Builder{}
+	b.WriteString("Maybe(")
+	b.WriteString(writeDebug(p, stack, p.subParser))
+	b.WriteString(")")
+	return b.String()
 }
 
 // Match matches the embedded parser or the empty string.

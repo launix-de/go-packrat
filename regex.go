@@ -7,11 +7,15 @@
 
 package packrat
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 type RegexParser struct {
 	regex  *regexp.Regexp
 	skipWs bool
+	rs     string
 }
 
 func NewRegexParser(rs string, caseInsensitive bool, skipWs bool) *RegexParser {
@@ -21,7 +25,15 @@ func NewRegexParser(rs string, caseInsensitive bool, skipWs bool) *RegexParser {
 	}
 	prefix += "^"
 	r := regexp.MustCompile(prefix + rs)
-	return &RegexParser{regex: r, skipWs: skipWs}
+	return &RegexParser{regex: r, skipWs: skipWs, rs: rs}
+}
+
+func (p *RegexParser) Description(stack map[Parser]bool) string {
+	b := strings.Builder{}
+	b.WriteString("Regex(")
+	b.WriteString(p.rs)
+	b.WriteString(")")
+	return b.String()
 }
 
 // Regex matches only the given regexp. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
@@ -33,7 +45,6 @@ func (p *RegexParser) Match(s *Scanner) (*Scanner, Node) {
 			return nil, Node{}
 		}
 	}
-
 
 	matched := s.MatchRegexp(p.regex)
 	if matched == nil {

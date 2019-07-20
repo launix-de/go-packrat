@@ -20,3 +20,7 @@ func NewEmptyParser() *EmptyParser {
 func (p *EmptyParser) Match(s *Scanner) (*Scanner, Node) {
 	return s, Node{Matched: emptyString, Parser: p}
 }
+
+func (p *EmptyParser) Description(stack map[Parser]bool) string {
+	return "Empty"
+}

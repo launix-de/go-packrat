@@ -21,6 +21,14 @@ func (p *AndParser) Set(embedded ...Parser) {
 	p.subParser = embedded
 }
 
+func (p *AndParser) Description(stack map[Parser]bool) string {
+	b := strings.Builder{}
+	b.WriteString("And(")
+	b.WriteString(writeDebug(p, stack, p.subParser...))
+	b.WriteString(")")
+	return b.String()
+}
+
 // Match matches all given parsers sequentially.
 func (p *AndParser) Match(s *Scanner) (*Scanner, Node) {
 	var nodes []Node

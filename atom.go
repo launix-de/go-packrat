@@ -7,11 +7,15 @@
 
 package packrat
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 type AtomParser struct {
-	r    *regexp.Regexp
+	r      *regexp.Regexp
 	skipWs bool
+	atom   string
 }
 
 func NewAtomParser(str string, caseInsensitive bool, skipWs bool) *AtomParser {
@@ -21,8 +25,16 @@ func NewAtomParser(str string, caseInsensitive bool, skipWs bool) *AtomParser {
 	}
 	prefix += "^"
 	r := regexp.MustCompile(prefix + regexp.QuoteMeta(str))
-	p := &AtomParser{skipWs: skipWs, r: r}	
+	p := &AtomParser{skipWs: skipWs, r: r, atom: str}
 	return p
+}
+
+func (p *AtomParser) Description(stack map[Parser]bool) string {
+	b := strings.Builder{}
+	b.WriteString("Atom(")
+	b.WriteString(p.atom)
+	b.WriteString(")")
+	return b.String()
 }
 
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.

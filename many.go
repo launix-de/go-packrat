@@ -22,6 +22,14 @@ func (p *ManyParser) Set(embedded Parser, separator Parser) {
 	p.sepParser = separator
 }
 
+func (p *ManyParser) Description(stack map[Parser]bool) string {
+	b := strings.Builder{}
+	b.WriteString("Many(")
+	b.WriteString(writeDebug(p, stack, p.subParser, p.sepParser))
+	b.WriteString(")")
+	return b.String()
+}
+
 func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 	var nodes []Node
 
