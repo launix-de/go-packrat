@@ -30,14 +30,15 @@ func (p *AndParser) Description(stack map[Parser]bool) string {
 }
 
 // Match matches all given parsers sequentially.
-func (p *AndParser) Match(s *Scanner) (*Scanner, Node) {
-	var nodes []Node
+func (p *AndParser) Match(s *Scanner) *Node {
+	var nodes []*Node
 
+	startPosition := s.position
 	for _, c := range p.subParser {
-		var node Node
-		s, node = match(s, c)
-		if s == nil {
-			return nil, Node{}
+		node := s.applyRule(c)
+		if node == nil {
+			s.setPosition(startPosition)
+			return nil
 		}
 		nodes = append(nodes, node)
 	}
@@ -48,6 +49,5 @@ func (p *AndParser) Match(s *Scanner) (*Scanner, Node) {
 	}
 	matched := b.String()
 
-	r := scannerNode{Scanner: s, Node: Node{Matched: matched, Parser: p, Children: nodes}}
-	return r.Scanner, r.Node
+	return &Node{Matched: matched, Parser: p, Children: nodes}
 }

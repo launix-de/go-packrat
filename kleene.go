@@ -31,18 +31,18 @@ func (p *KleeneParser) Description(stack map[Parser]bool) string {
 }
 
 // Match matches the embedded parser or the empty string.
-func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
-	var nodes []Node
+func (p *KleeneParser) Match(s *Scanner) *Node {
+	var nodes []*Node
 
 	i := 0
+	lastValidPosition := s.position
 	for {
-		ns := s
 		matchedsep := false
-		var sepnode Node
+		var sepnode *Node
 
 		if i > 0 && p.sepParser != nil {
-			ns, sepnode = match(ns, p.sepParser)
-			if ns == nil {
+			sepnode = s.applyRule(p.sepParser)
+			if sepnode == nil {
 				break
 			}
 
@@ -50,9 +50,8 @@ func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
 		}
 		i++
 
-		var node Node
-		ns, node = match(ns, p.subParser)
-		if ns == nil {
+		node := s.applyRule(p.subParser)
+		if node == nil {
 			break
 		}
 
@@ -61,8 +60,9 @@ func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
 		}
 
 		nodes = append(nodes, node)
-		s = ns
+		lastValidPosition = s.position
 	}
+	s.setPosition(lastValidPosition)
 
 	b := strings.Builder{}
 	for _, n := range nodes {
@@ -70,5 +70,5 @@ func (p *KleeneParser) Match(s *Scanner) (*Scanner, Node) {
 	}
 	matched := b.String()
 
-	return s, Node{Matched: matched, Parser: p, Children: nodes}
+	return &Node{Matched: matched, Parser: p, Children: nodes}
 }

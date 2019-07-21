@@ -38,26 +38,30 @@ func (p *AtomParser) Description(stack map[Parser]bool) string {
 }
 
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
-func (p *AtomParser) Match(s *Scanner) (*Scanner, Node) {
+func (p *AtomParser) Match(s *Scanner) *Node {
+	startPosition := s.position
+
 	if p.skipWs {
 		s.Skip()
 
 		if !s.isAtBreak() {
-			return nil, Node{}
+			s.setPosition(startPosition)
+			return nil
 		}
 	}
 
 	matched := s.MatchRegexp(p.r)
 	if matched == nil {
-		return nil, Node{}
+		s.setPosition(startPosition)
+		return nil
 	}
 
 	if p.skipWs {
 		if !s.isAtBreak() {
-			return nil, Node{}
+			s.setPosition(startPosition)
+			return nil
 		}
 	}
 
-	r := scannerNode{Scanner: s, Node: Node{Matched: *matched, Parser: p}}
-	return r.Scanner, r.Node
+	return &Node{Matched: *matched, Parser: p}
 }

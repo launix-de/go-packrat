@@ -10,7 +10,8 @@ func TestLeftRecursion(t *testing.T) {
 	minusParser := NewAtomParser(`-`, false, true)
 
 	termParser := NewAndParser()
-	exprParser := NewOrParser(termParser, numParser)
+exprParser:
+	NewOrParser(termParser, numParser)
 	termParser.Set(exprParser, minusParser, numParser)
 
 	n, err := Parse(termParser, scanner)

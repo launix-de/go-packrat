@@ -30,18 +30,19 @@ func (p *ManyParser) Description(stack map[Parser]bool) string {
 	return b.String()
 }
 
-func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
-	var nodes []Node
+func (p *ManyParser) Match(s *Scanner) *Node {
+	var nodes []*Node
 
 	i := 0
+	lastValidPos := s.position
+
 	for {
-		ns := s
 		matchedsep := false
-		var sepnode Node
+		var sepnode *Node
 
 		if i > 0 && p.sepParser != nil {
-			ns, sepnode = match(s, p.sepParser)
-			if ns == nil {
+			sepnode = s.applyRule(p.sepParser)
+			if sepnode == nil {
 				break
 			}
 
@@ -49,9 +50,8 @@ func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 		}
 		i++
 
-		var node Node
-		ns, node = match(ns, p.subParser)
-		if ns == nil {
+		node := s.applyRule(p.subParser)
+		if node == nil {
 			break
 		}
 
@@ -60,8 +60,9 @@ func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 		}
 
 		nodes = append(nodes, node)
-		s = ns
+		lastValidPos = s.position
 	}
+	s.setPosition(lastValidPos)
 
 	if len(nodes) >= 1 {
 		b := strings.Builder{}
@@ -70,8 +71,8 @@ func (p *ManyParser) Match(s *Scanner) (*Scanner, Node) {
 		}
 		matched := b.String()
 
-		return s, Node{Matched: matched, Parser: p, Children: nodes}
+		return &Node{Matched: matched, Parser: p, Children: nodes}
 	}
 
-	return nil, Node{}
+	return nil
 }

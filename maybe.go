@@ -30,12 +30,14 @@ func (p *MaybeParser) Description(stack map[Parser]bool) string {
 }
 
 // Match matches the embedded parser or the empty string.
-func (p *MaybeParser) Match(s *Scanner) (*Scanner, Node) {
-	ns, node := match(s, p.subParser)
+func (p *MaybeParser) Match(s *Scanner) *Node {
+	startPosition := s.position
+	node := s.applyRule(p.subParser)
 
-	if ns == nil {
-		return s, Node{Matched: emptyString, Parser: p}
+	if node == nil {
+		s.setPosition(startPosition)
+		return &Node{Matched: emptyString, Parser: p}
 	}
 
-	return ns, Node{Matched: node.Matched, Parser: p, Children: []Node{node}}
+	return &Node{Matched: node.Matched, Parser: p, Children: []*Node{node}}
 }

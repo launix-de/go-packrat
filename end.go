@@ -17,6 +17,7 @@ func NewEndParser(skipWs bool) *EndParser {
 
 // Match accepts only the end of the scanner's input and will not match any input.
 func (p *EndParser) Match(s *Scanner) (*Scanner, Node) {
+	startPosition := s.position
 	if p.skipWs {
 		s.Skip()
 	}
@@ -25,5 +26,6 @@ func (p *EndParser) Match(s *Scanner) (*Scanner, Node) {
 		return s, Node{}
 	}
 
+	s.setPosition(startPosition)
 	return nil, Node{}
 }

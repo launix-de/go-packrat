@@ -9,86 +9,49 @@ package packrat
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 )
 
 type Parser interface {
-	Match(s *Scanner) (*Scanner, Node)
+	Match(s *Scanner) *Node
 	Description(visited map[Parser]bool) string
 }
 
-func match(os *Scanner, p Parser) (*Scanner, Node) {
-	startPosition := os.position
+func (s *Scanner) applyRule(rule Parser) *Node {
+	startPosition := s.position
 
-	m, mExists := os.memoization[startPosition]
-	if !mExists {
-		m = make(map[Parser]scannerNode)
-		os.memoization[startPosition] = m
+	memmap, memmapExists := s.memoization[startPosition]
+	if !memmapExists {
+		memmap = make(map[Parser]*MemoEntry)
+		s.memoization[startPosition] = memmap
 	}
 
-	cached, wasCached := m[p]
-	if wasCached {
-		if cached.Scanner == nil {
-			m[p] = cached
+	m := s.Recall(rule, startPosition)
+	if m == nil {
+		lr := &Lr{seed: nil, rule: rule, head: nil, next: s.invocationStack}
+		s.invocationStack = lr
+		m := &MemoEntry{Lr: lr, Position: startPosition}
+		memmap[rule] = m
+		ans := rule.Match(s)
+		s.invocationStack = s.invocationStack.next
+		m.Position = s.position
+		if lr.head != nil {
+			lr.seed = ans
+			return s.LrAnswer(rule, startPosition, m)
 		}
-		nss, node := cached.Scanner, cached.Node
-		return nss, node
+
+		m.Ans = ans
+		return ans
 	}
 
-	var triedParsers map[Parser]bool
-	triedParsers = os.triedParsers[startPosition]
-	if triedParsers == nil {
-		triedParsers = make(map[Parser]bool)
-		os.triedParsers[startPosition] = triedParsers
+	s.position = m.Position
+
+	if m.Lr != nil {
+		s.SetupLr(rule, m.Lr)
+		return m.Lr.seed
 	}
-	_, alreadyTried := triedParsers[p]
-	if alreadyTried {
-		if os.lrDetected.Parser != nil && os.lrDetected.Parser != p {
-			panic("Indirect left recursion is not supported")
-		}
-		os.lrDetected.Parser = p
-		os.lrDetected.StartPos = os.position
-		visited := make(map[Parser]bool)
-		fmt.Println("Left recursion detected at pos " + strconv.Itoa(os.position) + ": " + os.lrDetected.Parser.Description(visited))
 
-		// Ablehnen, damit der Samen angelegt werden kann
-		return nil, Node{}
-	}
-	triedParsers[p] = true
-
-	s := os.Copy()
-	ns, n := p.Match(s)
-
-	/**
-	Term -> Term "-" Term / Num
-	Num -> \d+
-
-	5 - 4 - 3
-	*/
-
-	m[p] = scannerNode{Scanner: ns, Node: n}
-
-	if os.lrDetected.Parser != nil && os.lrDetected.Parser == p && !os.lrDetected.InDescent {
-		// lp := ns.lrDetected
-		fmt.Println("Outer left recursion: " + n.Matched)
-
-		// Jetzt den Samen wachsen lassen - den Parser immer wieder aufrufen, bis er nicht mehr voran kommt
-		//		changedPosition := false
-
-		nns := ns.Copy()
-		nns.lrDetected.InDescent = false
-		for {
-			nns.move(-(nns.position - s.lrDetected.StartPos))
-			nns2, n2 := match(nns, p)
-
-			if nns2 == nil {
-				return nns, n
-			}
-			nns, n = nns2, n2
-		}
-	}
-	return ns, n
+	return m.Ans
 }
 
 var emptyString = ""
@@ -96,7 +59,7 @@ var emptyString = ""
 type Node struct {
 	Matched  string
 	Parser   Parser
-	Children []Node
+	Children []*Node
 }
 
 type ParserError struct {
@@ -123,9 +86,9 @@ func (e *ParserError) Error() string {
 }
 
 func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	newScanner, node := match(originalScanner, p)
-	if newScanner != nil {
-		return &node, nil
+	node := originalScanner.applyRule(p)
+	if node != nil {
+		return node, nil
 	}
 
 	maxPos := 0
@@ -149,17 +112,17 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 }
 
 func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	newScanner, node := match(originalScanner, p)
-	if newScanner != nil {
-		if len(newScanner.remainingInput) > 0 {
-			consumed := originalScanner.input[:newScanner.position]
+	node := originalScanner.applyRule(p)
+	if node != nil {
+		if len(originalScanner.remainingInput) > 0 {
+			consumed := originalScanner.input[:originalScanner.position]
 			line := strings.Count(consumed, "\n") + 1
-			column := newScanner.position - strings.LastIndex(consumed, "\n") + 1
-			e := &ParserError{Parser: p, Line: line, Column: column, Position: newScanner.position, Input: originalScanner.input}
+			column := originalScanner.position - strings.LastIndex(consumed, "\n") + 1
+			e := &ParserError{Parser: p, Line: line, Column: column, Position: originalScanner.position, Input: originalScanner.input}
 			return nil, e
 		}
 
-		return &node, nil
+		return node, nil
 	}
 
 	maxPos := 0

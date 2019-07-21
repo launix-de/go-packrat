@@ -38,24 +38,28 @@ func (p *RegexParser) Description(stack map[Parser]bool) string {
 
 // Regex matches only the given regexp. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
 // Regex panics if rs is not a valid regex string.
-func (p *RegexParser) Match(s *Scanner) (*Scanner, Node) {
+func (p *RegexParser) Match(s *Scanner) *Node {
+	startPosition := s.position
 	if p.skipWs {
 		s.Skip()
 		if !s.isAtBreak() {
-			return nil, Node{}
+			s.setPosition(startPosition)
+			return nil
 		}
 	}
 
 	matched := s.MatchRegexp(p.regex)
 	if matched == nil {
-		return nil, Node{}
+		s.setPosition(startPosition)
+		return nil
 	}
 
 	if p.skipWs {
 		if !s.isAtBreak() {
-			return nil, Node{}
+			s.setPosition(startPosition)
+			return nil
 		}
 	}
 
-	return s, Node{Matched: *matched, Parser: p}
+	return &Node{Matched: *matched, Parser: p}
 }
