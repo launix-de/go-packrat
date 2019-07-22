@@ -14,12 +14,14 @@ This library allows to construct backtracking top down packrat parsers in Go usi
 - `KleeneParser`: Matches a parser 0 to `n` times, optionally separated by another parser
 - `ManyParser`: Matches a parser 1 to `n` times, optionally separated by another parser
 - `MaybeParser`: Matches a parser 0 or 1 times
+- `EmptyParser`: Does not read any input and matches in every case
+- `EndParser`: Matches only if the scanner has reached the end of the input string 
 
 By default, `Atom` and `Regex` parsers skip (but do not match on) leading whitespace. This can be configured per parser.
 
-If a parser matches, it returns an AST `*Node`. Every node points to the parser that produced it, the matched text, and a list of child nodes. AST callbacks are not provided atm, so a full AST traversal is needed to process the parse results.
+If a parser matches, it returns an syntax tree `*Node`. Every node points to the parser that produced it, the matched text, and a list of child nodes. AST callbacks are not provided atm, so a full syntax tree traversal is needed to process the parse results.
 
-To construct recursive parsers, create parser combinators with `nil` as the sub parser. After creating the sub parser that itself uses the parent parser, use the `Set` function on the parent parser to update its children. The [JSON parser](./json_test.go) provides an example for this. Note that left recursion is not handled atm and will result in an endless descent.
+To construct recursive parsers, create parser combinators with `nil` as the sub parser. After creating the sub parser that itself uses the parent parser, use the `Set` function on the parent parser to update its children. The [JSON parser](./json_test.go) provides an example for this.
 
 This library is currently used in production, but some rarely used features may be broken. Additional documentation is ToDo.
 
