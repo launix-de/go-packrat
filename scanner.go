@@ -117,7 +117,7 @@ func (s *Scanner) GrowLr(rule Parser, p int, m *MemoEntry, h *Head) *Node {
 			h.evalSet[k] = v
 		}
 		ans := rule.Match(s)
-		if ans == nil || s.position <= m.Position {
+		if ans == nil || s.position < m.Position {
 			break
 		}
 		m.Ans = ans
