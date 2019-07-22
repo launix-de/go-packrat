@@ -17,28 +17,6 @@ type Parser interface {
 	Children() []Parser
 }
 
-func isLooped(p Parser, stack map[Parser]bool) bool {
-	if stack == nil {
-		stack = make(map[Parser]bool)
-	}
-	if stack[p] {
-		return true
-	}
-	newstack := make(map[Parser]bool)
-	for p2 := range stack {
-		newstack[p2] = true
-	}
-	newstack[p] = true
-
-	for _, c := range p.Children() {
-		if isLooped(c, newstack) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (s *Scanner) applyRule(rule Parser) *Node {
 	startPosition := s.position
 
@@ -50,12 +28,6 @@ func (s *Scanner) applyRule(rule Parser) *Node {
 
 	m := s.Recall(rule, startPosition)
 	if m == nil {
-		if !isLooped(rule, nil) {
-			m := &MemoEntry{Ans: rule.Match(s), Position: startPosition}
-			m.Position = s.position
-			memmap[rule] = m
-			return m.Ans
-		}
 		lr := &Lr{seed: nil, rule: rule, head: nil, next: s.invocationStack}
 		s.invocationStack = lr
 		m := &MemoEntry{Lr: lr, Position: startPosition}
