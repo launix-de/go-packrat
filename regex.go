@@ -27,10 +27,6 @@ func NewRegexParser(rs string, caseInsensitive bool, skipWs bool) *RegexParser {
 	return &RegexParser{regex: r, skipWs: skipWs, rs: rs}
 }
 
-func (p *RegexParser) Children() []Parser {
-	return nil
-}
-
 // Regex matches only the given regexp. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
 // Regex panics if rs is not a valid regex string.
 func (p *RegexParser) Match(s *Scanner) *Node {

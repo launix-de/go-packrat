@@ -14,7 +14,6 @@ import (
 
 type Parser interface {
 	Match(s *Scanner) *Node
-	Children() []Parser
 }
 
 func (s *Scanner) applyRule(rule Parser) *Node {

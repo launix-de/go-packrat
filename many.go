@@ -22,17 +22,6 @@ func (p *ManyParser) Set(embedded Parser, separator Parser) {
 	p.sepParser = separator
 }
 
-func (p *ManyParser) Children() []Parser {
-	var r []Parser
-	if p.subParser != nil {
-		r = append(r, p.subParser)
-	}
-	if p.sepParser != nil {
-		r = append(r, p.sepParser)
-	}
-	return r
-}
-
 func (p *ManyParser) Match(s *Scanner) *Node {
 	var nodes []*Node
 

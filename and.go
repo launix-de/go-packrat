@@ -14,10 +14,12 @@ type AndParser struct {
 	subParser []Parser
 }
 
+// NewAndParser constructs a new AndParser with the given sub parsers. An AndParser accepts an input if all sub parsers accept the input sequentially.
 func NewAndParser(subparser ...Parser) *AndParser {
 	return &AndParser{subParser: subparser}
 }
 
+// Set updates the sub parsers. This can be used to construct recursive parsers.
 func (p *AndParser) Set(embedded ...Parser) {
 	p.subParser = embedded
 }
@@ -43,8 +45,4 @@ func (p *AndParser) Match(s *Scanner) *Node {
 	matched := b.String()
 
 	return &Node{Matched: matched, Parser: p, Children: nodes}
-}
-
-func (p *AndParser) Children() []Parser {
-	return p.subParser
 }

@@ -19,10 +19,6 @@ func (p *OrParser) Set(embedded ...Parser) {
 	p.subParser = embedded
 }
 
-func (p *OrParser) Children() []Parser {
-	return p.subParser
-}
-
 // Match matches all given parsers sequentially.
 func (p *OrParser) Match(s *Scanner) *Node {
 	startPosition := s.position

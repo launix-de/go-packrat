@@ -64,14 +64,3 @@ func (p *KleeneParser) Match(s *Scanner) *Node {
 
 	return &Node{Matched: matched, Parser: p, Children: nodes}
 }
-
-func (p *KleeneParser) Children() []Parser {
-	var r []Parser
-	if p.subParser != nil {
-		r = append(r, p.subParser)
-	}
-	if p.sepParser != nil {
-		r = append(r, p.sepParser)
-	}
-	return r
-}

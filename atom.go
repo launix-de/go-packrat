@@ -28,10 +28,6 @@ func NewAtomParser(str string, caseInsensitive bool, skipWs bool) *AtomParser {
 	return p
 }
 
-func (p *AtomParser) Children() []Parser {
-	return nil
-}
-
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
 func (p *AtomParser) Match(s *Scanner) *Node {
 	startPosition := s.position

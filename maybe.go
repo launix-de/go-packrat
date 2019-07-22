@@ -31,7 +31,3 @@ func (p *MaybeParser) Match(s *Scanner) *Node {
 
 	return &Node{Matched: node.Matched, Parser: p, Children: []*Node{node}}
 }
-
-func (p *MaybeParser) Children() []Parser {
-	return []Parser{p.subParser}
-}

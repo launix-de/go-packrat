@@ -29,7 +29,3 @@ func (p *EndParser) Match(s *Scanner) *Node {
 	s.setPosition(startPosition)
 	return nil
 }
-
-func (p *EndParser) Children() []Parser {
-	return nil
-}
