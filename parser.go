@@ -81,9 +81,12 @@ func (e *ParserError) Error() string {
 	endpos := e.Position + 10
 	if endpos >= len(e.Input) {
 		endpos = len(e.Input) - 1
+		if endpos < 0 {
+			endpos = 0
+		}
 	}
 	s := e.Input[startpos:endpos]
-	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string) near %s", e.Line, e.Column, e.Position, s)
+	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string) near %s", e.Line, e.Column, e.Position+1, s)
 }
 
 func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
@@ -107,7 +110,11 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 
 	consumed := originalScanner.input[:maxPos]
 	line := strings.Count(consumed, "\n") + 1
-	column := maxPos - strings.LastIndex(consumed, "\n") + 1
+	lastBreak := strings.LastIndex(consumed, "\n")
+	if lastBreak < 0 {
+		lastBreak = 0
+	}
+	column := maxPos - lastBreak + 1
 	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 	return nil, e
 }
@@ -141,7 +148,11 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 
 	consumed := originalScanner.input[:maxPos]
 	line := strings.Count(consumed, "\n") + 1
-	column := maxPos - strings.LastIndex(consumed, "\n") + 1
+	lastBreak := strings.LastIndex(consumed, "\n")
+	if lastBreak < 0 {
+		lastBreak = 0
+	}
+	column := maxPos - lastBreak + 1
 	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 
 	return nil, e
