@@ -83,7 +83,7 @@ func (s *Scanner) Recall(rule Parser, pos int) *MemoEntry {
 
 	// Do not evaluate any rule that is not involved in this left recursion
 	if m == nil && !head.IsInvolved(rule) {
-		return nil
+		return &MemoEntry{Position: s.position}
 	}
 
 	// Allow involved rules to be evaluated, but only once, during a seed-growing iteration
@@ -101,7 +101,7 @@ func (s *Scanner) SetupLr(rule Parser, l *Lr) {
 		l.head = NewHead(rule)
 	}
 	stack := s.invocationStack
-	for stack.head != l.head {
+	for stack != nil && stack.head != l.head {
 		stack.head = l.head
 		l.head.involvedSet[stack.rule] = true
 		stack = stack.next

@@ -44,7 +44,7 @@ func (s *Scanner) applyRule(rule Parser) *Node {
 		return ans
 	}
 
-	s.position = m.Position
+	s.setPosition(m.Position)
 
 	if m.Lr != nil {
 		s.SetupLr(rule, m.Lr)

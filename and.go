@@ -9,6 +9,7 @@ package packrat
 
 import "strings"
 
+// AndParser accepts an input if all sub parsers accept the input sequentially
 type AndParser struct {
 	subParser []Parser
 }
