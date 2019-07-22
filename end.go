@@ -29,3 +29,7 @@ func (p *EndParser) Match(s *Scanner) (*Scanner, Node) {
 	s.setPosition(startPosition)
 	return nil, Node{}
 }
+
+func (p *EndParser) Description(stack map[Parser]bool) string {
+	return "End()"
+}
