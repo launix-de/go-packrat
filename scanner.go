@@ -103,7 +103,12 @@ func (s *Scanner) SetupLr(rule Parser, l *Lr) {
 	stack := s.invocationStack
 	for stack != nil && stack.head != l.head {
 		stack.head = l.head
-		l.head.involvedSet[stack.rule] = true
+		newInvolved := make(map[Parser]bool)
+		for k := range l.head.involvedSet {
+			newInvolved[k] = true
+		}
+		newInvolved[stack.rule] = true
+		l.head.involvedSet = newInvolved
 		stack = stack.next
 	}
 }
