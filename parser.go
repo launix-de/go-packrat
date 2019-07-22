@@ -40,6 +40,7 @@ func (s *Scanner) applyRule(rule Parser) *Node {
 			return s.LrAnswer(rule, startPosition, m)
 		}
 
+		m.Lr = nil
 		m.Ans = ans
 		return ans
 	}
