@@ -6,12 +6,15 @@ func TestLeftRecursion(t *testing.T) {
 	input := "5-1-4-3"
 	scanner := NewScanner(input, true)
 
+	emptyParser1 := NewEmptyParser()
+
 	numParser := NewRegexParser(`\d+`, false, true)
+	numCombo1 := NewAndParser(emptyParser1, emptyParser1, numParser)
 	minusParser := NewAtomParser(`-`, false, true)
 
 	termParser := NewAndParser()
-	exprParser := NewOrParser(termParser, numParser)
-	termParser.Set(exprParser, minusParser, numParser)
+	exprParser := NewOrParser(termParser, numCombo1)
+	termParser.Set(exprParser, minusParser, numCombo1)
 
 	n, err := Parse(exprParser, scanner)
 	if err != nil {

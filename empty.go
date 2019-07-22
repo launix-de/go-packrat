@@ -21,6 +21,6 @@ func (p *EmptyParser) Match(s *Scanner) *Node {
 	return &Node{Matched: emptyString, Parser: p}
 }
 
-func (p *EmptyParser) Description(stack map[Parser]bool) string {
-	return "Empty"
+func (p *EmptyParser) Children() []Parser {
+	return nil
 }

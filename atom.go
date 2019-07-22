@@ -9,7 +9,6 @@ package packrat
 
 import (
 	"regexp"
-	"strings"
 )
 
 type AtomParser struct {
@@ -29,12 +28,8 @@ func NewAtomParser(str string, caseInsensitive bool, skipWs bool) *AtomParser {
 	return p
 }
 
-func (p *AtomParser) Description(stack map[Parser]bool) string {
-	b := strings.Builder{}
-	b.WriteString("Atom(")
-	b.WriteString(p.atom)
-	b.WriteString(")")
-	return b.String()
+func (p *AtomParser) Children() []Parser {
+	return nil
 }
 
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.

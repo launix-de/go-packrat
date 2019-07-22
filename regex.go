@@ -9,7 +9,6 @@ package packrat
 
 import (
 	"regexp"
-	"strings"
 )
 
 type RegexParser struct {
@@ -28,12 +27,8 @@ func NewRegexParser(rs string, caseInsensitive bool, skipWs bool) *RegexParser {
 	return &RegexParser{regex: r, skipWs: skipWs, rs: rs}
 }
 
-func (p *RegexParser) Description(stack map[Parser]bool) string {
-	b := strings.Builder{}
-	b.WriteString("Regex(")
-	b.WriteString(p.rs)
-	b.WriteString(")")
-	return b.String()
+func (p *RegexParser) Children() []Parser {
+	return nil
 }
 
 // Regex matches only the given regexp. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.

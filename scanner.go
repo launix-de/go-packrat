@@ -120,6 +120,7 @@ func (s *Scanner) GrowLr(rule Parser, p int, m *MemoEntry, h *Head) *Node {
 		if ans == nil || s.position <= m.Position {
 			break
 		}
+		m.Lr = nil
 		m.Ans = ans
 		m.Position = s.position
 	}

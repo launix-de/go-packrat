@@ -14,7 +14,7 @@ import (
 
 type Parser interface {
 	Match(s *Scanner) *Node
-	Description(visited map[Parser]bool) string
+	Children() []Parser
 }
 
 func (s *Scanner) applyRule(rule Parser) *Node {
@@ -28,6 +28,12 @@ func (s *Scanner) applyRule(rule Parser) *Node {
 
 	m := s.Recall(rule, startPosition)
 	if m == nil {
+		if len(rule.Children()) == 0 {
+			m := &MemoEntry{Ans: rule.Match(s), Position: startPosition}
+			m.Position = s.position
+			memmap[rule] = m
+			return m.Ans
+		}
 		lr := &Lr{seed: nil, rule: rule, head: nil, next: s.invocationStack}
 		s.invocationStack = lr
 		m := &MemoEntry{Lr: lr, Position: startPosition}
@@ -144,24 +150,4 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 
 	return nil, e
-}
-
-func writeDebug(p Parser, stack map[Parser]bool, subs ...Parser) string {
-	stack[p] = true
-	b := strings.Builder{}
-
-	for i, s := range subs {
-		if i > 0 {
-			b.WriteString(", ")
-		}
-		subVisited := stack[s]
-		if subVisited {
-			b.WriteString("--- parent ---")
-		} else {
-			b.WriteString(s.Description(stack))
-		}
-	}
-
-	stack[p] = false
-	return b.String()
 }

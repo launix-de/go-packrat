@@ -30,6 +30,6 @@ func (p *EndParser) Match(s *Scanner) *Node {
 	return nil
 }
 
-func (p *EndParser) Description(stack map[Parser]bool) string {
-	return "End()"
+func (p *EndParser) Children() []Parser {
+	return nil
 }
