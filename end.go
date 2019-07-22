@@ -16,18 +16,18 @@ func NewEndParser(skipWs bool) *EndParser {
 }
 
 // Match accepts only the end of the scanner's input and will not match any input.
-func (p *EndParser) Match(s *Scanner) (*Scanner, Node) {
+func (p *EndParser) Match(s *Scanner) *Node {
 	startPosition := s.position
 	if p.skipWs {
 		s.Skip()
 	}
 
 	if len(s.remainingInput) == 0 {
-		return s, Node{}
+		return &Node{Parser: p, Matched: ""}
 	}
 
 	s.setPosition(startPosition)
-	return nil, Node{}
+	return nil
 }
 
 func (p *EndParser) Description(stack map[Parser]bool) string {
