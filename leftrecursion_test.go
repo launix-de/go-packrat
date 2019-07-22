@@ -6,7 +6,8 @@ func TestLeftRecursion(t *testing.T) {
 	input := "5-1-4-3"
 	scanner := NewScanner(input, true)
 
-	emptyParser1 := NewEmptyParser()
+	emptyParser := NewEmptyParser()
+	emptyParser1 := NewAndParser(emptyParser)
 
 	numParser := NewRegexParser(`\d+`, false, true)
 	numCombo1 := NewAndParser(emptyParser1, emptyParser1, numParser)
