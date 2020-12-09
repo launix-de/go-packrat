@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 type Parser interface {
@@ -88,34 +89,23 @@ func (e *ParserError) Error() string {
 		}
 	}
 
-	builder := strings.Builder{}
-	builder.WriteString(fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string).", e.Line, e.Column, e.Position+1))
-	replacer := strings.NewReplacer("\r\n", "\\n", "\n", "\\n", "\t", "  ")
-	builder.WriteString("\r\n" + replacer.Replace(e.Input[startpos:endpos]))
-	builder.WriteString("\r\n")
-	runes := []rune(e.Input)
-	for i := startpos; i < e.Position && i < len(runes); i++ {
-		c := runes[i]
-		switch c {
-		case '\n':
-			builder.WriteString("  ")
-		case '\t':
-			builder.WriteString("  ")
-		default:
-			builder.WriteRune(' ')
-		}
-	}
-	builder.WriteString("^\r\n")
-
 	atomParsers := make(map[*AtomParser]bool)
 	regexParsers := make(map[*RegexParser]bool)
 	eofParser := false
+	allskipws := true
+
 	for _, p := range e.FailedParsers {
 		switch pa := p.(type) {
 		case *AtomParser:
 			atomParsers[pa] = true
+			if !pa.skipWs {
+				allskipws = false
+			}
 		case *RegexParser:
 			regexParsers[pa] = true
+			if !pa.skipWs {
+				allskipws = false
+			}
 		case *EndParser:
 			eofParser = true
 		}
@@ -148,6 +138,29 @@ func (e *ParserError) Error() string {
 	if eofParser && count < 5 {
 		expected.WriteString("- End of input\r\n")
 	}
+
+	epos := e.Position
+	for allskipws && unicode.IsSpace(rune(e.Input[epos])) && epos < len(e.Input)-1 {
+		epos++
+	}
+	builder := strings.Builder{}
+	builder.WriteString(fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string).", e.Line, e.Column, e.Position+1))
+	replacer := strings.NewReplacer("\r\n", "\\n", "\n", "\\n", "\t", "  ")
+	builder.WriteString("\r\n" + replacer.Replace(e.Input[startpos:endpos]))
+	builder.WriteString("\r\n")
+	runes := []rune(e.Input)
+	for i := startpos; i < epos && i < len(runes); i++ {
+		c := runes[i]
+		switch c {
+		case '\n':
+			builder.WriteString("  ")
+		case '\t':
+			builder.WriteString("  ")
+		default:
+			builder.WriteRune(' ')
+		}
+	}
+	builder.WriteString("^\r\n")
 	builder.WriteString("Expected one of " + strconv.Itoa(len(atomParsers)+len(regexParsers)) + " alternatives:\r\n" + expected.String() + "Found: " + strings.ReplaceAll(e.Input[e.Position:endpos], "\n", "\\n"))
 
 	return builder.String()
