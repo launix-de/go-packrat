@@ -9,6 +9,7 @@ package packrat
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -72,20 +73,84 @@ type ParserError struct {
 }
 
 func (e *ParserError) Error() string {
-	startpos := e.Position - 1
+	linestartpos := e.Position - 30
+
+	startpos := linestartpos
 	if startpos < 0 {
 		startpos = 0
 	}
 
 	endpos := e.Position + 10
 	if endpos >= len(e.Input) {
-		endpos = len(e.Input) - 1
+		endpos = len(e.Input)
 		if endpos < 0 {
 			endpos = 0
 		}
 	}
-	s := e.Input[startpos:endpos]
-	return fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string) near %s", e.Line, e.Column, e.Position+1, s)
+
+	builder := strings.Builder{}
+	builder.WriteString(fmt.Sprintf("Parser failed at line %d, column %d (position %d of input string).", e.Line, e.Column, e.Position+1))
+	replacer := strings.NewReplacer("\r\n", "\\n", "\n", "\\n", "\t", "  ")
+	builder.WriteString("\r\n" + replacer.Replace(e.Input[startpos:endpos]))
+	builder.WriteString("\r\n")
+	runes := []rune(e.Input)
+	for i := startpos; i < e.Position && i < len(runes); i++ {
+		c := runes[i]
+		switch c {
+		case '\n':
+			builder.WriteString("  ")
+		case '\t':
+			builder.WriteString("  ")
+		default:
+			builder.WriteRune(' ')
+		}
+	}
+	builder.WriteString("^\r\n")
+
+	atomParsers := make(map[*AtomParser]bool)
+	regexParsers := make(map[*RegexParser]bool)
+	eofParser := false
+	for _, p := range e.FailedParsers {
+		switch pa := p.(type) {
+		case *AtomParser:
+			atomParsers[pa] = true
+		case *RegexParser:
+			regexParsers[pa] = true
+		case *EndParser:
+			eofParser = true
+		}
+	}
+
+	expected := strings.Builder{}
+	count := 0
+	for r := range atomParsers {
+		if count >= 5 {
+			break
+		}
+		expected.WriteString("- " + r.atom)
+		if r.skipWs {
+			expected.WriteString(" (with leading whitespace)")
+		}
+		expected.WriteString("\r\n")
+		count++
+	}
+	for r := range regexParsers {
+		if count >= 5 {
+			break
+		}
+		expected.WriteString("- Regex: " + r.rs)
+		if r.skipWs {
+			expected.WriteString(" (with leading whitespace)")
+		}
+		expected.WriteString("\r\n")
+		count++
+	}
+	if eofParser && count < 5 {
+		expected.WriteString("- End of input\r\n")
+	}
+	builder.WriteString("Expected one of " + strconv.Itoa(len(atomParsers)+len(regexParsers)) + " alternatives:\r\n" + expected.String() + "Found: " + strings.ReplaceAll(e.Input[e.Position:endpos], "\n", "\\n"))
+
+	return builder.String()
 }
 
 func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
@@ -134,7 +199,7 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 
 	maxPos := 0
 	var failedParsers []Parser
-	for index := len(originalScanner.memoization) - 1; index > 0; index-- {
+	for index := len(originalScanner.input) - 1; index > 0; index-- {
 		m := originalScanner.memoization[index]
 		if len(m) > 0 {
 			maxPos = index
