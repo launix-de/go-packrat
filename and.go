@@ -36,5 +36,5 @@ func (p *AndParser) Match(s *Scanner) *Node {
 		nodes = append(nodes, node)
 	}
 
-	return &Node{Matched: s.input[startPosition:s.position], Parser: p, Children: nodes}
+	return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
 }

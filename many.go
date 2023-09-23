@@ -24,7 +24,6 @@ func (p *ManyParser) Match(s *Scanner) *Node {
 	var nodes []*Node
 
 	i := 0
-	startPosition := s.position
 	lastValidPos := s.position
 
 	for {
@@ -56,7 +55,7 @@ func (p *ManyParser) Match(s *Scanner) *Node {
 	s.setPosition(lastValidPos)
 
 	if len(nodes) >= 1 {
-		return &Node{Matched: s.input[startPosition:s.position], Parser: p, Children: nodes}
+		return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
 	}
 
 	return nil

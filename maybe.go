@@ -29,5 +29,5 @@ func (p *MaybeParser) Match(s *Scanner) *Node {
 		return &Node{Matched: emptyString, Parser: p}
 	}
 
-	return &Node{Matched: node.Matched, Parser: p, Children: []*Node{node}}
+	return &Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{node}}
 }

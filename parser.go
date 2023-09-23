@@ -60,6 +60,7 @@ var emptyString = ""
 
 type Node struct {
 	Matched  string
+	Start    int
 	Parser   Parser
 	Children []*Node
 }

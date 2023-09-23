@@ -41,7 +41,7 @@ func TestKleene(t *testing.T) {
 	}
 }
 func TestKleeneSeparator(t *testing.T) {
-	input := "Hello, Hello, Hello"
+	input := "  Hello, Hello, Hello"
 	scanner := NewScanner(input, true)
 
 	helloParser := NewAtomParser("Hello", false, true)
@@ -55,7 +55,7 @@ func TestKleeneSeparator(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Kleene combinator creates node with wrong parser")
 		}
-		if n.Matched != input {
+		if n.Matched != "Hello, Hello, Hello" {
 			t.Error("Kleene combinator doesn't match complete input")
 		}
 		if len(n.Children) != 5 {
