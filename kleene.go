@@ -7,8 +7,6 @@
 
 package packrat
 
-import "strings"
-
 type KleeneParser struct {
 	subParser, sepParser Parser
 }
@@ -27,6 +25,7 @@ func (p *KleeneParser) Match(s *Scanner) *Node {
 	var nodes []*Node
 
 	i := 0
+	startPosition := s.position
 	lastValidPosition := s.position
 	for {
 		matchedsep := false
@@ -56,11 +55,5 @@ func (p *KleeneParser) Match(s *Scanner) *Node {
 	}
 	s.setPosition(lastValidPosition)
 
-	b := strings.Builder{}
-	for _, n := range nodes {
-		b.WriteString(n.Matched)
-	}
-	matched := b.String()
-
-	return &Node{Matched: matched, Parser: p, Children: nodes}
+	return &Node{Matched: s.input[startPosition:s.position], Parser: p, Children: nodes}
 }

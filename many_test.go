@@ -23,7 +23,7 @@ func TestManySeparator(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Many combinator creates node with wrong parser")
 		}
-		if n.Matched != "Hello,Hello" {
+		if n.Matched != input {
 			t.Error("Many combinator doesn't match complete input")
 		}
 		if len(n.Children) != 3 {
@@ -57,7 +57,7 @@ func TestManySeparatorRegex(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Many combinator creates node with wrong parser")
 		}
-		if n.Matched != "23,45" {
+		if n.Matched != input {
 			t.Error("Many combinator doesn't match complete input")
 		}
 		if len(n.Children) != 3 {

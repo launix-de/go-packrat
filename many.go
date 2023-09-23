@@ -7,8 +7,6 @@
 
 package packrat
 
-import "strings"
-
 type ManyParser struct {
 	subParser, sepParser Parser
 }
@@ -26,6 +24,7 @@ func (p *ManyParser) Match(s *Scanner) *Node {
 	var nodes []*Node
 
 	i := 0
+	startPosition := s.position
 	lastValidPos := s.position
 
 	for {
@@ -57,13 +56,7 @@ func (p *ManyParser) Match(s *Scanner) *Node {
 	s.setPosition(lastValidPos)
 
 	if len(nodes) >= 1 {
-		b := strings.Builder{}
-		for _, n := range nodes {
-			b.WriteString(n.Matched)
-		}
-		matched := b.String()
-
-		return &Node{Matched: matched, Parser: p, Children: nodes}
+		return &Node{Matched: s.input[startPosition:s.position], Parser: p, Children: nodes}
 	}
 
 	return nil

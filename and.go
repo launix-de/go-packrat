@@ -7,8 +7,6 @@
 
 package packrat
 
-import "strings"
-
 // AndParser accepts an input if all sub parsers accept the input sequentially
 type AndParser struct {
 	subParser []Parser
@@ -38,11 +36,5 @@ func (p *AndParser) Match(s *Scanner) *Node {
 		nodes = append(nodes, node)
 	}
 
-	b := strings.Builder{}
-	for _, n := range nodes {
-		b.WriteString(n.Matched)
-	}
-	matched := b.String()
-
-	return &Node{Matched: matched, Parser: p, Children: nodes}
+	return &Node{Matched: s.input[startPosition:s.position], Parser: p, Children: nodes}
 }
