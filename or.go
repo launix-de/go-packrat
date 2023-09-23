@@ -25,7 +25,7 @@ func (p *OrParser) Match(s *Scanner) *Node {
 	for _, c := range p.subParser {
 		node := s.applyRule(c)
 		if node != nil {
-			return &Node{Matched: node.Matched, Parser: p, Children: []*Node{node}}
+			return &Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{node}}
 		}
 		s.setPosition(startPosition)
 	}

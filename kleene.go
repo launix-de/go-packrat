@@ -55,7 +55,7 @@ func (p *KleeneParser) Match(s *Scanner) *Node {
 	s.setPosition(lastValidPosition)
 
 	if len(nodes) == 0 {
-		return &Node{Matched: "", Parser: p, Children: nil}
+		return &Node{Matched: "", Start: s.position, Parser: p, Children: nil}
 	}
-	return &Node{Matched: s.input[nodes[0].Start:s.position], Parser: p, Children: nodes}
+	return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
 }
