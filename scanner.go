@@ -1,6 +1,7 @@
 /*
-	(c) 2019 Launix, Inh. Carl-Philip Hänsch
+	(c) 2019, 2023 Launix, Inh. Carl-Philip Hänsch
 	Author: Tim Kluge
+	Author: Carl-Philip Hänsch
 
 	Dual licensed with custom aggreements or GPLv3
 */
@@ -148,15 +149,15 @@ func (s *Scanner) LrAnswer(rule Parser, pos int, m *MemoEntry) *Node {
 	return s.GrowLr(rule, pos, m, h)
 }
 
-var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
+var SkipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
+var SkipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t ]+)+") // regex for comments
 
-func NewScanner(input string, skipWhitespace bool) *Scanner {
+// skipper: use nil, SkipWhitespaceRegex or your very own regex
+func NewScanner(input string, skipper *regexp.Regexp) *Scanner {
 	s := &Scanner{input: input, position: 0, memoization: make(map[int]map[Parser]*MemoEntry),
 		heads: make(map[int]*Head)}
 	s.remainingInput = s.input
-	if skipWhitespace {
-		s.skipRegex = skipWhitespaceRegex
-	}
+	s.skipRegex = skipper
 	s.breaks = make(map[int]bool)
 
 	previousWord := false

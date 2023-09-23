@@ -4,7 +4,7 @@ import "testing"
 
 func TestEmptyParser(t *testing.T) {
 	input := "Hello"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	emptyParser := NewEmptyParser()
 	helloParser := NewAtomParser("Hello", false, true)

@@ -11,7 +11,7 @@ import "testing"
 
 func TestKleene(t *testing.T) {
 	input := "Hello Hello Hello"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewKleeneParser(helloParser, nil)
@@ -29,7 +29,7 @@ func TestKleene(t *testing.T) {
 	}
 
 	irregularInput := "Sonne"
-	irregularScanner := NewScanner(irregularInput, true)
+	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
 	irregularParser := NewKleeneParser(helloParser, nil)
 
 	in, ierr := ParsePartial(irregularParser, irregularScanner)
@@ -42,7 +42,7 @@ func TestKleene(t *testing.T) {
 }
 func TestKleeneSeparator(t *testing.T) {
 	input := "  Hello, Hello, Hello"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", false, true)
 	sepParser := NewAtomParser(",", false, true)
@@ -64,7 +64,7 @@ func TestKleeneSeparator(t *testing.T) {
 	}
 
 	irregularInput := "Sonne"
-	irregularScanner := NewScanner(irregularInput, true)
+	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
 	irregularParser := NewKleeneParser(helloParser, nil)
 
 	in, ierr := ParsePartial(irregularParser, irregularScanner)

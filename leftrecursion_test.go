@@ -4,7 +4,7 @@ import "testing"
 
 func TestLeftRecursion(t *testing.T) {
 	input := "5-1-4-3"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	emptyParser := NewEmptyParser()
 	emptyParser1 := NewAndParser(emptyParser)

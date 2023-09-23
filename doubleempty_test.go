@@ -4,7 +4,7 @@ import "testing"
 
 func TestDoubleEmpty(t *testing.T) {
 	input := ""
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	emptyParser := NewEmptyParser()
 	termParser := NewAndParser(emptyParser, emptyParser)

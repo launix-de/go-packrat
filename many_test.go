@@ -11,7 +11,7 @@ import "testing"
 
 func TestManySeparator(t *testing.T) {
 	input := "Hello, Hello"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
@@ -34,7 +34,7 @@ func TestManySeparator(t *testing.T) {
 		}
 	}
 
-	irregularScanner := NewScanner("Hello, Hello, Hello, ", true)
+	irregularScanner := NewScanner("Hello, Hello, Hello, ", SkipWhitespaceRegex)
 	irregularParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
 
 	_, ierr := Parse(irregularParser, irregularScanner)
@@ -45,7 +45,7 @@ func TestManySeparator(t *testing.T) {
 
 func TestManySeparatorRegex(t *testing.T) {
 	input := "   23, 45"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewRegexParser(`\d+`, false, true)
 	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
@@ -68,7 +68,7 @@ func TestManySeparatorRegex(t *testing.T) {
 		}
 	}
 
-	irregularScanner := NewScanner("Hello, Hello, Hello, ", true)
+	irregularScanner := NewScanner("Hello, Hello, Hello, ", SkipWhitespaceRegex)
 	irregularParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
 
 	_, ierr := Parse(irregularParser, irregularScanner)
@@ -79,7 +79,7 @@ func TestManySeparatorRegex(t *testing.T) {
 
 func TestMany(t *testing.T) {
 	input := "Hello Hello Hello"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewManyParser(helloParser, nil)
@@ -96,7 +96,7 @@ func TestMany(t *testing.T) {
 		}
 	}
 
-	irregularScanner := NewScanner("Sonne", true)
+	irregularScanner := NewScanner("Sonne", SkipWhitespaceRegex)
 	irregularParser := NewManyParser(helloParser, nil)
 
 	_, ierr := ParsePartial(irregularParser, irregularScanner)
@@ -104,7 +104,7 @@ func TestMany(t *testing.T) {
 		t.Error("Many combinator matches irregular input")
 	}
 
-	irregularScanner2 := NewScanner("", true)
+	irregularScanner2 := NewScanner("", SkipWhitespaceRegex)
 	irregularParser2 := NewManyParser(helloParser, nil)
 
 	_, ierr = Parse(irregularParser2, irregularScanner2)

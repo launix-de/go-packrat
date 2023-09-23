@@ -12,7 +12,7 @@ import "testing"
 
 func TestAndInsensitive(t *testing.T) {
 	input := "HELLO world"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", true, true)
 	worldParser := NewAtomParser("World", true, true)
@@ -31,7 +31,7 @@ func TestAndInsensitive(t *testing.T) {
 
 func TestAnd(t *testing.T) {
 	input := "Hello World"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", false, true)
 	worldParser := NewAtomParser("World", false, true)
@@ -50,7 +50,7 @@ func TestAnd(t *testing.T) {
 	}
 
 	irregularInput := "Hello"
-	irregularScanner := NewScanner(irregularInput, true)
+	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
 	irregularParser := NewAndParser(helloParser, worldParser)
 
 	_, ierr := Parse(irregularParser, irregularScanner)
@@ -61,7 +61,7 @@ func TestAnd(t *testing.T) {
 
 func TestOr(t *testing.T) {
 	input := "World"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", false, true)
 	worldParser := NewAtomParser("World", false, true)
@@ -80,7 +80,7 @@ func TestOr(t *testing.T) {
 	}
 
 	irregularInput := "Sonne"
-	irregularScanner := NewScanner(irregularInput, true)
+	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
 	irregularParser := NewAndParser(helloParser, worldParser)
 
 	_, ierr := Parse(irregularParser, irregularScanner)

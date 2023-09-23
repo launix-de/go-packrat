@@ -10,7 +10,7 @@ import "testing"
 
 func TestMaybe(t *testing.T) {
 	input := "Hello"
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	helloParser := NewAtomParser("Hello", false, true)
 	helloAndWorldParser := NewMaybeParser(helloParser)
@@ -28,7 +28,7 @@ func TestMaybe(t *testing.T) {
 	}
 
 	irregularInput := "Sonne"
-	irregularScanner := NewScanner(irregularInput, true)
+	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
 	irregularParser := NewMaybeParser(helloParser)
 
 	in, ierr := ParsePartial(irregularParser, irregularScanner)

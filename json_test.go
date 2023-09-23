@@ -37,7 +37,7 @@ func TestJSON(t *testing.T) {
 			{"id": "About", "label": "About Adobe CVG Viewer..."}
 		]
 	}}`
-	scanner := NewScanner(input, true)
+	scanner := NewScanner(input, SkipWhitespaceRegex)
 
 	stringParser := NewAndParser(NewAtomParser(`"`, false, true), NewRegexParser(`(?:[^"\\]|\\.)*`, false, false), NewAtomParser(`"`, false, false))
 	valueParser := NewOrParser(nil)
