@@ -200,6 +200,7 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 	node := originalScanner.applyRule(p)
 	if node != nil {
+		originalScanner.Skip()
 		if len(originalScanner.remainingInput) > 0 {
 			consumed := originalScanner.input[:originalScanner.position]
 			line := strings.Count(consumed, "\n") + 1
