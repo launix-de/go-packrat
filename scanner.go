@@ -15,7 +15,7 @@ import (
 
 type MemoEntry struct {
 	Lr  *Lr
-	Ans *Node
+	Ans Node
 
 	Position int
 }
@@ -45,7 +45,7 @@ func (h *Head) IsEvaluated(rule Parser) bool {
 }
 
 type Lr struct {
-	seed *Node
+	seed Node
 	rule Parser
 	head *Head
 	next *Lr
@@ -114,7 +114,7 @@ func (s *Scanner) SetupLr(rule Parser, l *Lr) {
 	}
 }
 
-func (s *Scanner) GrowLr(rule Parser, p int, m *MemoEntry, h *Head) *Node {
+func (s *Scanner) GrowLr(rule Parser, p int, m *MemoEntry, h *Head) Node {
 	s.heads[p] = h
 	for {
 		s.setPosition(p)
@@ -123,7 +123,7 @@ func (s *Scanner) GrowLr(rule Parser, p int, m *MemoEntry, h *Head) *Node {
 			h.evalSet[k] = v
 		}
 		ans := rule.Match(s)
-		if ans == nil || s.position <= m.Position {
+		if ans.Parser == nil || s.position <= m.Position {
 			break
 		}
 		m.Lr = nil
@@ -135,7 +135,7 @@ func (s *Scanner) GrowLr(rule Parser, p int, m *MemoEntry, h *Head) *Node {
 	return m.Ans
 }
 
-func (s *Scanner) LrAnswer(rule Parser, pos int, m *MemoEntry) *Node {
+func (s *Scanner) LrAnswer(rule Parser, pos int, m *MemoEntry) Node {
 	h := m.Lr.head
 	if h.rule != rule {
 		return m.Lr.seed
@@ -143,8 +143,8 @@ func (s *Scanner) LrAnswer(rule Parser, pos int, m *MemoEntry) *Node {
 	m.Ans = m.Lr.seed
 	m.Lr = nil
 
-	if m.Ans == nil {
-		return nil
+	if m.Ans.Parser == nil {
+		return Node{}
 	}
 	return s.GrowLr(rule, pos, m, h)
 }

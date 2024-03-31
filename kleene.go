@@ -21,18 +21,18 @@ func (p *KleeneParser) Set(embedded Parser, separator Parser) {
 }
 
 // Match matches the embedded parser or the empty string.
-func (p *KleeneParser) Match(s *Scanner) *Node {
+func (p *KleeneParser) Match(s *Scanner) Node {
 	var nodes []*Node
 
 	i := 0
 	lastValidPosition := s.position
 	for {
 		matchedsep := false
-		var sepnode *Node
+		var sepnode Node
 
 		if i > 0 && p.sepParser != nil {
 			sepnode = s.applyRule(p.sepParser)
-			if sepnode == nil {
+			if sepnode.Parser == nil {
 				break
 			}
 
@@ -41,21 +41,21 @@ func (p *KleeneParser) Match(s *Scanner) *Node {
 		i++
 
 		node := s.applyRule(p.subParser)
-		if node == nil {
+		if node.Parser == nil {
 			break
 		}
 
 		if matchedsep {
-			nodes = append(nodes, sepnode)
+			nodes = append(nodes, &sepnode)
 		}
 
-		nodes = append(nodes, node)
+		nodes = append(nodes, &node)
 		lastValidPosition = s.position
 	}
 	s.setPosition(lastValidPosition)
 
 	if len(nodes) == 0 {
-		return &Node{Matched: "", Start: s.position, Parser: p, Children: nil}
+		return Node{Matched: "", Start: s.position, Parser: p, Children: nil}
 	}
-	return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
+	return Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
 }

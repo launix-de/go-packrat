@@ -20,15 +20,15 @@ func (p *OrParser) Set(embedded ...Parser) {
 }
 
 // Match matches all given parsers sequentially.
-func (p *OrParser) Match(s *Scanner) *Node {
+func (p *OrParser) Match(s *Scanner) Node {
 	startPosition := s.position
 	for _, c := range p.subParser {
 		node := s.applyRule(c)
-		if node != nil {
-			return &Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{node}}
+		if node.Parser != nil {
+			return Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{&node}}
 		}
 		s.setPosition(startPosition)
 	}
 
-	return nil
+	return Node{}
 }

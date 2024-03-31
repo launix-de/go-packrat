@@ -20,14 +20,14 @@ func (p *MaybeParser) Set(embedded Parser) {
 }
 
 // Match matches the embedded parser or the empty string.
-func (p *MaybeParser) Match(s *Scanner) *Node {
+func (p *MaybeParser) Match(s *Scanner) Node {
 	startPosition := s.position
 	node := s.applyRule(p.subParser)
 
-	if node == nil {
+	if node.Parser == nil {
 		s.setPosition(startPosition)
-		return &Node{Matched: emptyString, Parser: p}
+		return Node{Matched: emptyString, Parser: p}
 	}
 
-	return &Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{node}}
+	return Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{&node}}
 }

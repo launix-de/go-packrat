@@ -15,10 +15,10 @@ import (
 )
 
 type Parser interface {
-	Match(s *Scanner) *Node
+	Match(s *Scanner) Node
 }
 
-func (s *Scanner) applyRule(rule Parser) *Node {
+func (s *Scanner) applyRule(rule Parser) Node {
 	startPosition := s.position
 
 	memmap, memmapExists := s.memoization[startPosition]
@@ -29,7 +29,7 @@ func (s *Scanner) applyRule(rule Parser) *Node {
 
 	m := s.Recall(rule, startPosition)
 	if m == nil {
-		lr := &Lr{seed: nil, rule: rule, head: nil, next: s.invocationStack}
+		lr := &Lr{seed: Node{}, rule: rule, head: nil, next: s.invocationStack}
 		s.invocationStack = lr
 		m := &MemoEntry{Lr: lr, Position: startPosition}
 		memmap[rule] = m
@@ -167,9 +167,9 @@ func (e *ParserError) Error() string {
 	return builder.String()
 }
 
-func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	node := originalScanner.applyRule(p)
-	if node != nil {
+func ParsePartial(p Parser, originalScanner *Scanner) (node Node, e *ParserError) {
+	node = originalScanner.applyRule(p)
+	if node.Parser != nil {
 		return node, nil
 	}
 
@@ -193,20 +193,20 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 		lastBreak = 0
 	}
 	column := maxPos - lastBreak + 1
-	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
-	return nil, e
+	e = &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
+	return Node{}, e
 }
 
-func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	node := originalScanner.applyRule(p)
-	if node != nil {
+func Parse(p Parser, originalScanner *Scanner) (node Node, e *ParserError) {
+	node = originalScanner.applyRule(p)
+	if node.Parser != nil {
 		originalScanner.Skip()
 		if len(originalScanner.remainingInput) > 0 {
 			consumed := originalScanner.input[:originalScanner.position]
 			line := strings.Count(consumed, "\n") + 1
 			column := originalScanner.position - strings.LastIndex(consumed, "\n") + 1
 			e := &ParserError{Parser: p, Line: line, Column: column, Position: originalScanner.position, Input: originalScanner.input}
-			return nil, e
+			return Node{}, e
 		}
 
 		return node, nil
@@ -232,7 +232,7 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 		lastBreak = 0
 	}
 	column := maxPos - lastBreak + 1
-	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
+	e = &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 
-	return nil, e
+	return Node{}, e
 }
