@@ -29,7 +29,7 @@ func NewAtomParser(str string, caseInsensitive bool, skipWs bool) *AtomParser {
 }
 
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
-func (p *AtomParser) Match(s *Scanner) Node {
+func (p *AtomParser) Match(s *Scanner) *Node {
 	startPosition := s.position
 
 	if p.skipWs {
@@ -37,7 +37,7 @@ func (p *AtomParser) Match(s *Scanner) Node {
 
 		if !s.isAtBreak() {
 			s.setPosition(startPosition)
-			return Node{}
+			return nil
 		}
 	}
 
@@ -46,15 +46,15 @@ func (p *AtomParser) Match(s *Scanner) Node {
 	matched := s.MatchRegexp(p.r)
 	if matched == nil {
 		s.setPosition(startPosition)
-		return Node{}
+		return nil
 	}
 
 	if p.skipWs {
 		if !s.isAtBreak() {
 			s.setPosition(startPosition)
-			return Node{}
+			return nil
 		}
 	}
 
-	return Node{Matched: *matched, Start: whitepos, Parser: p}
+	return &Node{Matched: *matched, Start: whitepos, Parser: p}
 }

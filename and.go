@@ -23,18 +23,18 @@ func (p *AndParser) Set(embedded ...Parser) {
 }
 
 // Match matches all given parsers sequentially.
-func (p *AndParser) Match(s *Scanner) Node {
+func (p *AndParser) Match(s *Scanner) *Node {
 	var nodes []*Node
 
 	startPosition := s.position
 	for _, c := range p.subParser {
 		node := s.applyRule(c)
-		if node.Parser == nil {
+		if node == nil {
 			s.setPosition(startPosition)
-			return Node{}
+			return nil
 		}
-		nodes = append(nodes, &node)
+		nodes = append(nodes, node)
 	}
 
-	return Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
+	return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
 }

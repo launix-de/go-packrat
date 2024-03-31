@@ -20,7 +20,7 @@ func (p *ManyParser) Set(embedded Parser, separator Parser) {
 	p.sepParser = separator
 }
 
-func (p *ManyParser) Match(s *Scanner) Node {
+func (p *ManyParser) Match(s *Scanner) *Node {
 	var nodes []*Node
 
 	i := 0
@@ -28,11 +28,11 @@ func (p *ManyParser) Match(s *Scanner) Node {
 
 	for {
 		matchedsep := false
-		var sepnode Node
+		var sepnode *Node
 
 		if i > 0 && p.sepParser != nil {
 			sepnode = s.applyRule(p.sepParser)
-			if sepnode.Parser == nil {
+			if sepnode == nil {
 				break
 			}
 
@@ -41,22 +41,22 @@ func (p *ManyParser) Match(s *Scanner) Node {
 		i++
 
 		node := s.applyRule(p.subParser)
-		if node.Parser == nil {
+		if node == nil {
 			break
 		}
 
 		if matchedsep {
-			nodes = append(nodes, &sepnode)
+			nodes = append(nodes, sepnode)
 		}
 
-		nodes = append(nodes, &node)
+		nodes = append(nodes, node)
 		lastValidPos = s.position
 	}
 	s.setPosition(lastValidPos)
 
 	if len(nodes) >= 1 {
-		return Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
+		return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
 	}
 
-	return Node{}
+	return nil
 }
