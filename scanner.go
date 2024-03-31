@@ -9,7 +9,7 @@
 package packrat
 
 import (
-	"regexp"
+	regexp "github.com/wasilibs/go-re2"
 	"unicode"
 )
 
