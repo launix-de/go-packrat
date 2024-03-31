@@ -8,7 +8,7 @@
 package packrat
 
 import (
-	regexp "github.com/wasilibs/go-re2"
+	"regexp"
 )
 
 type AtomParser struct {
