@@ -7,14 +7,21 @@
 
 package packrat
 
+import "strconv"
 import "testing"
 
 func TestManySeparator(t *testing.T) {
 	input := "Hello, Hello"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
-	helloParser := NewAtomParser("Hello", false, true)
-	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
+	helloParser := NewAtomParser(4, "Hello", false, true)
+	helloAndWorldParser := NewManyParser(func (s string, a ...int) int {
+		r := 0
+		for _, i := range a {
+			r += i
+		}
+		return r
+	}, helloParser, NewAtomParser(0, ",", false, true))
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
@@ -26,16 +33,19 @@ func TestManySeparator(t *testing.T) {
 		if n.Matched != input {
 			t.Error("Many combinator doesn't match complete input")
 		}
-		if len(n.Children) != 3 {
-			t.Error("Many combinator doesn't produce 3 children")
-		}
-		if n.Children[0].Matched != "Hello" || n.Children[1].Matched != "," || n.Children[2].Matched != "Hello" {
-			t.Error("Many combinator sub parsers match wrong input: '" + n.Children[0].Matched + "' '" + n.Children[1].Matched + "' '" + n.Children[2].Matched + "'")
+		if n.Payload != 8 {
+			t.Error("Many combinator doesn't produce correct payload")
 		}
 	}
 
-	irregularScanner := NewScanner("Hello, Hello, Hello, ", SkipWhitespaceRegex)
-	irregularParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
+	irregularScanner := NewScanner[int]("Hello, Hello, Hello, ", SkipWhitespaceRegex)
+	irregularParser := NewManyParser(func (s string, a ...int) int {
+		var r int
+		for _, i := range a {
+			r += i
+		}
+		return r
+	}, helloParser, NewAtomParser(0, ",", false, true))
 
 	_, ierr := Parse(irregularParser, irregularScanner)
 	if ierr == nil {
@@ -45,10 +55,19 @@ func TestManySeparator(t *testing.T) {
 
 func TestManySeparatorRegex(t *testing.T) {
 	input := "   23, 45"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
-	helloParser := NewRegexParser(`\d+`, false, true)
-	helloAndWorldParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
+	helloParser := NewRegexParser(func (s string) int {
+		i, _ := strconv.ParseInt(s, 10, 32)
+		return int(i)
+	}, `\d+`, false, true)
+	helloAndWorldParser := NewManyParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, NewAtomParser(0, ",", false, true))
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
@@ -60,16 +79,19 @@ func TestManySeparatorRegex(t *testing.T) {
 		if n.Matched != "23, 45" {
 			t.Error("Many combinator doesn't match complete input")
 		}
-		if len(n.Children) != 3 {
-			t.Error("Many combinator doesn't produce 3 children")
-		}
-		if n.Children[0].Matched != "23" || n.Children[1].Matched != "," || n.Children[2].Matched != "45" {
-			t.Error("Many combinator sub parsers match wrong input: '" + n.Children[0].Matched + "' '" + n.Children[1].Matched + "' '" + n.Children[2].Matched + "'")
+		if n.Payload != 68 {
+			t.Error("Many combinator doesn't produce correct payload")
 		}
 	}
 
-	irregularScanner := NewScanner("Hello, Hello, Hello, ", SkipWhitespaceRegex)
-	irregularParser := NewManyParser(helloParser, NewAtomParser(",", false, true))
+	irregularScanner := NewScanner[int]("Hello, Hello, Hello, ", SkipWhitespaceRegex)
+	irregularParser := NewManyParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, NewAtomParser(0, ",", false, true))
 
 	_, ierr := Parse(irregularParser, irregularScanner)
 	if ierr == nil {
@@ -79,10 +101,16 @@ func TestManySeparatorRegex(t *testing.T) {
 
 func TestMany(t *testing.T) {
 	input := "Hello Hello Hello"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
-	helloParser := NewAtomParser("Hello", false, true)
-	helloAndWorldParser := NewManyParser(helloParser, nil)
+	helloParser := NewAtomParser(5, "Hello", false, true)
+	helloAndWorldParser := NewManyParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, nil)
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
@@ -91,21 +119,33 @@ func TestMany(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Many combinator creates node with wrong parser")
 		}
-		if len(n.Children) != 3 {
-			t.Error("Many combinator doesn't produce 3 children")
+		if n.Payload != 15 {
+			t.Error("Many combinator doesn't produce correct payload")
 		}
 	}
 
-	irregularScanner := NewScanner("Sonne", SkipWhitespaceRegex)
-	irregularParser := NewManyParser(helloParser, nil)
+	irregularScanner := NewScanner[int]("Sonne", SkipWhitespaceRegex)
+	irregularParser := NewManyParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, nil)
 
 	_, ierr := ParsePartial(irregularParser, irregularScanner)
 	if ierr == nil {
 		t.Error("Many combinator matches irregular input")
 	}
 
-	irregularScanner2 := NewScanner("", SkipWhitespaceRegex)
-	irregularParser2 := NewManyParser(helloParser, nil)
+	irregularScanner2 := NewScanner[int]("", SkipWhitespaceRegex)
+	irregularParser2 := NewManyParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, nil)
 
 	_, ierr = Parse(irregularParser2, irregularScanner2)
 	if ierr == nil {

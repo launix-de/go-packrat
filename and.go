@@ -8,33 +8,38 @@
 package packrat
 
 // AndParser accepts an input if all sub parsers accept the input sequentially
-type AndParser struct {
-	subParser []Parser
+type AndParser[T any] struct {
+	callback func(string, ...T) T
+	subParser []Parser[T]
 }
 
 // NewAndParser constructs a new AndParser with the given sub parsers. An AndParser accepts an input if all sub parsers accept the input sequentially.
-func NewAndParser(subparser ...Parser) *AndParser {
-	return &AndParser{subParser: subparser}
+func NewAndParser[T any](callback func(string, ...T) T, subparser ...Parser[T]) *AndParser[T] {
+	return &AndParser[T]{callback: callback, subParser: subparser}
 }
 
 // Set updates the sub parsers. This can be used to construct recursive parsers.
-func (p *AndParser) Set(embedded ...Parser) {
+func (p *AndParser[T]) Set(embedded ...Parser[T]) {
 	p.subParser = embedded
 }
 
 // Match matches all given parsers sequentially.
-func (p *AndParser) Match(s *Scanner) *Node {
-	var nodes []*Node
+func (p *AndParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
+	var nodes []T
+	start := s.position
 
 	startPosition := s.position
-	for _, c := range p.subParser {
-		node := s.applyRule(c)
-		if node == nil {
+	for i, c := range p.subParser {
+		node, ok := s.applyRule(c)
+		if !ok {
 			s.setPosition(startPosition)
-			return nil
+			return Node[T]{}, false
 		}
-		nodes = append(nodes, node)
+		if i == 0 {
+			start = node.Start
+		}
+		nodes = append(nodes, node.Payload)
 	}
 
-	return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
+	return Node[T]{Matched: s.input[start:s.position], Start: start, Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
 }

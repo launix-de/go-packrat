@@ -13,24 +13,25 @@ import (
 	"unicode"
 )
 
-type MemoEntry struct {
-	Lr  *Lr
-	Ans *Node
+type MemoEntry[T any] struct {
+	Lr  *Lr[T]
+	Ans Node[T]
+	Ok bool
 
 	Position int
 }
 
-type Head struct {
-	rule        Parser
-	involvedSet map[Parser]bool
-	evalSet     map[Parser]bool
+type Head[T any] struct {
+	rule        Parser[T]
+	involvedSet map[Parser[T]]bool
+	evalSet     map[Parser[T]]bool
 }
 
-func NewHead(rule Parser) *Head {
-	return &Head{rule: rule, involvedSet: make(map[Parser]bool), evalSet: make(map[Parser]bool)}
+func NewHead[T any](rule Parser[T]) *Head[T] {
+	return &Head[T]{rule: rule, involvedSet: make(map[Parser[T]]bool), evalSet: make(map[Parser[T]]bool)}
 }
 
-func (h *Head) IsInvolved(rule Parser) bool {
+func (h *Head[T]) IsInvolved(rule Parser[T]) bool {
 	if rule == h.rule {
 		return true
 	}
@@ -39,39 +40,40 @@ func (h *Head) IsInvolved(rule Parser) bool {
 	return isInvoled
 }
 
-func (h *Head) IsEvaluated(rule Parser) bool {
+func (h *Head[T]) IsEvaluated(rule Parser[T]) bool {
 	_, isEvaluated := h.evalSet[rule]
 	return isEvaluated
 }
 
-type Lr struct {
-	seed *Node
-	rule Parser
-	head *Head
-	next *Lr
+type Lr[T any] struct {
+	seed Node[T]
+	seedOk bool
+	rule Parser[T]
+	head *Head[T]
+	next *Lr[T]
 }
 
-type Scanner struct {
+type Scanner[T any] struct {
 	input           string
 	remainingInput  string
 	position        int
-	memoization     map[int]map[Parser]*MemoEntry
-	heads           map[int]*Head
-	invocationStack *Lr
+	memoization     map[int]map[Parser[T]]*MemoEntry[T]
+	heads           map[int]*Head[T]
+	invocationStack *Lr[T]
 	breaks          map[int]bool
 
 	skipRegex *regexp.Regexp
 }
 
 // Copy clones the scanner state. Memoization and break maps are shared
-func (s *Scanner) Copy() *Scanner {
+func (s *Scanner[T]) Copy() *Scanner[T] {
 	ns := *s
 	return &ns
 }
 
-func (s *Scanner) Recall(rule Parser, pos int) *MemoEntry {
+func (s *Scanner[T]) Recall(rule Parser[T], pos int) *MemoEntry[T] {
 	mmap, mmapExists := s.memoization[pos]
-	var m *MemoEntry
+	var m *MemoEntry[T]
 	if mmapExists {
 		m = mmap[rule]
 	}
@@ -84,27 +86,27 @@ func (s *Scanner) Recall(rule Parser, pos int) *MemoEntry {
 
 	// Do not evaluate any rule that is not involved in this left recursion
 	if m == nil && !head.IsInvolved(rule) {
-		return &MemoEntry{Position: s.position}
+		return &MemoEntry[T]{Position: s.position}
 	}
 
 	// Allow involved rules to be evaluated, but only once, during a seed-growing iteration
 	if head.IsEvaluated(rule) {
 		delete(head.evalSet, rule)
-		node := rule.Match(s)
-		return &MemoEntry{Position: s.position, Ans: node}
+		node, ok := rule.Match(s)
+		return &MemoEntry[T]{Position: s.position, Ans: node, Ok: ok}
 	}
 
 	return m
 }
 
-func (s *Scanner) SetupLr(rule Parser, l *Lr) {
+func (s *Scanner[T]) SetupLr(rule Parser[T], l *Lr[T]) {
 	if l.head == nil {
 		l.head = NewHead(rule)
 	}
 	stack := s.invocationStack
 	for stack != nil && stack.head != l.head {
 		stack.head = l.head
-		newInvolved := make(map[Parser]bool)
+		newInvolved := make(map[Parser[T]]bool)
 		for k := range l.head.involvedSet {
 			newInvolved[k] = true
 		}
@@ -114,37 +116,39 @@ func (s *Scanner) SetupLr(rule Parser, l *Lr) {
 	}
 }
 
-func (s *Scanner) GrowLr(rule Parser, p int, m *MemoEntry, h *Head) *Node {
+func (s *Scanner[T]) GrowLr(rule Parser[T], p int, m *MemoEntry[T], h *Head[T]) (Node[T], bool) {
 	s.heads[p] = h
 	for {
 		s.setPosition(p)
-		h.evalSet = make(map[Parser]bool)
+		h.evalSet = make(map[Parser[T]]bool)
 		for k, v := range h.involvedSet {
 			h.evalSet[k] = v
 		}
-		ans := rule.Match(s)
-		if ans == nil || s.position <= m.Position {
+		ans, ok := rule.Match(s)
+		if !ok || s.position <= m.Position {
 			break
 		}
 		m.Lr = nil
 		m.Ans = ans
+		m.Ok = ok
 		m.Position = s.position
 	}
 	delete(s.heads, p)
 	s.setPosition(m.Position)
-	return m.Ans
+	return m.Ans, m.Ok
 }
 
-func (s *Scanner) LrAnswer(rule Parser, pos int, m *MemoEntry) *Node {
+func (s *Scanner[T]) LrAnswer(rule Parser[T], pos int, m *MemoEntry[T]) (Node[T], bool) {
 	h := m.Lr.head
 	if h.rule != rule {
-		return m.Lr.seed
+		return m.Lr.seed, m.Lr.seedOk
 	}
 	m.Ans = m.Lr.seed
+	m.Ok = m.Lr.seedOk
 	m.Lr = nil
 
-	if m.Ans == nil {
-		return nil
+	if !m.Ok {
+		return Node[T]{}, false
 	}
 	return s.GrowLr(rule, pos, m, h)
 }
@@ -153,9 +157,9 @@ var SkipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
 var SkipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t ]+)+") // regex for comments
 
 // skipper: use nil, SkipWhitespaceRegex or your very own regex
-func NewScanner(input string, skipper *regexp.Regexp) *Scanner {
-	s := &Scanner{input: input, position: 0, memoization: make(map[int]map[Parser]*MemoEntry),
-		heads: make(map[int]*Head)}
+func NewScanner[T any](input string, skipper *regexp.Regexp) *Scanner[T] {
+	s := &Scanner[T]{input: input, position: 0, memoization: make(map[int]map[Parser[T]]*MemoEntry[T]),
+		heads: make(map[int]*Head[T])}
 	s.remainingInput = s.input
 	s.skipRegex = skipper
 	s.breaks = make(map[int]bool)
@@ -175,21 +179,21 @@ func NewScanner(input string, skipper *regexp.Regexp) *Scanner {
 	return s
 }
 
-func (s *Scanner) isAtBreak() bool {
+func (s *Scanner[T]) isAtBreak() bool {
 	return s.breaks[s.position]
 }
 
-func (s *Scanner) move(n int) {
+func (s *Scanner[T]) move(n int) {
 	s.position += n
 	s.remainingInput = s.input[s.position:]
 }
 
-func (s *Scanner) setPosition(n int) {
+func (s *Scanner[T]) setPosition(n int) {
 	s.position = n
 	s.remainingInput = s.input[s.position:]
 }
 
-func (s *Scanner) MatchRegexp(r *regexp.Regexp) *string {
+func (s *Scanner[T]) MatchRegexp(r *regexp.Regexp) *string {
 	matched := r.FindStringSubmatch(s.remainingInput)
 	if matched != nil {
 		s.move(len(matched[0]))
@@ -199,7 +203,7 @@ func (s *Scanner) MatchRegexp(r *regexp.Regexp) *string {
 	return nil
 }
 
-func (s *Scanner) Skip() {
+func (s *Scanner[T]) Skip() {
 	if s.skipRegex != nil {
 		s.MatchRegexp(s.skipRegex)
 	}

@@ -11,17 +11,20 @@ import "testing"
 
 func TestRegex(t *testing.T) {
 	input := "-3.4"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[string](input, SkipWhitespaceRegex)
 
-	numParser := NewRegexParser("-?\\d+\\.\\d+", false, false)
+	numParser := NewRegexParser(func (s string) string {return s}, "-?\\d+\\.\\d+", false, false)
 
-	_, err := Parse(numParser, scanner)
+	n, err := Parse(numParser, scanner)
 	if err != nil {
 		t.Error(err)
 	}
+	if n.Payload != "-3.4" {
+		t.Error("Regex combinator dosen't produce correct payload")
+	}
 
 	irregularInput := "3,4"
-	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
+	irregularScanner := NewScanner[string](irregularInput, SkipWhitespaceRegex)
 
 	_, ierr := Parse(numParser, irregularScanner)
 	if ierr == nil {

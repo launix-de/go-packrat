@@ -4,11 +4,11 @@ import "testing"
 
 func TestEmptyParser(t *testing.T) {
 	input := "Hello"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
-	emptyParser := NewEmptyParser()
-	helloParser := NewAtomParser("Hello", false, true)
-	helloAndWorldParser := NewAndParser(emptyParser, helloParser)
+	emptyParser := NewEmptyParser[int](7)
+	helloParser := NewAtomParser(1, "Hello", false, true)
+	helloAndWorldParser := NewAndParser(func (x string, a ...int) int {return a[0] + a[1]}, emptyParser, helloParser)
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
@@ -21,13 +21,7 @@ func TestEmptyParser(t *testing.T) {
 	if n.Matched != input {
 		t.Error("Empty Test combinator doesn't match complete input")
 	}
-	if len(n.Children) != 2 {
-		t.Error("Empty Test combinator doesn't produce 3 children")
-	}
-	if n.Children[0].Parser != emptyParser || n.Children[1].Parser != helloParser {
-		t.Error("Empty Test combinator AST nodes do not point to their respective parsers")
-	}
-	if n.Children[0].Matched != "" || n.Children[1].Matched != "Hello" {
-		t.Error("Empty Test combinator sub parsers match wrong input: '" + n.Children[0].Matched + "' '" + n.Children[1].Matched + "'")
+	if n.Payload != 8 {
+		t.Error("Empty Test combinator doesn't produce correct payload")
 	}
 }
