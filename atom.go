@@ -11,25 +11,26 @@ import (
 	"regexp"
 )
 
-type AtomParser struct {
+type AtomParser[T any] struct {
+	value T
 	r      *regexp.Regexp
 	skipWs bool
 	atom   string
 }
 
-func NewAtomParser(str string, caseInsensitive bool, skipWs bool) *AtomParser {
+func NewAtomParser[T any](value T, str string, caseInsensitive bool, skipWs bool) *AtomParser[T] {
 	prefix := ""
 	if caseInsensitive {
 		prefix += "(?i)"
 	}
 	prefix += "^"
 	r := regexp.MustCompile(prefix + regexp.QuoteMeta(str))
-	p := &AtomParser{skipWs: skipWs, r: r, atom: str}
+	p := &AtomParser[T]{value: value, skipWs: skipWs, r: r, atom: str}
 	return p
 }
 
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
-func (p *AtomParser) Match(s *Scanner) *Node {
+func (p *AtomParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 	startPosition := s.position
 
 	if p.skipWs {
@@ -37,7 +38,7 @@ func (p *AtomParser) Match(s *Scanner) *Node {
 
 		if !s.isAtBreak() {
 			s.setPosition(startPosition)
-			return nil
+			return Node[T]{}, false
 		}
 	}
 
@@ -46,15 +47,15 @@ func (p *AtomParser) Match(s *Scanner) *Node {
 	matched := s.MatchRegexp(p.r)
 	if matched == nil {
 		s.setPosition(startPosition)
-		return nil
+		return Node[T]{}, false
 	}
 
 	if p.skipWs {
 		if !s.isAtBreak() {
 			s.setPosition(startPosition)
-			return nil
+			return Node[T]{}, false
 		}
 	}
 
-	return &Node{Matched: *matched, Start: whitepos, Parser: p}
+	return Node[T]{Matched: *matched, Start: whitepos, Parser: p, Payload: p.value}, true
 }

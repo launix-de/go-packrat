@@ -7,56 +7,52 @@
 
 package packrat
 
-type ManyParser struct {
-	subParser, sepParser Parser
+type ManyParser[T any] struct {
+	callback func(string, ...T) T
+	subParser, sepParser Parser[T]
 }
 
-func NewManyParser(subparser Parser, sepparser Parser) *ManyParser {
-	return &ManyParser{subParser: subparser, sepParser: sepparser}
+func NewManyParser[T any](callback func(string, ...T) T, subparser Parser[T], sepparser Parser[T]) *ManyParser[T] {
+	return &ManyParser[T]{callback: callback, subParser: subparser, sepParser: sepparser}
 }
 
-func (p *ManyParser) Set(embedded Parser, separator Parser) {
+func (p *ManyParser[T]) Set(embedded Parser[T], separator Parser[T]) {
 	p.subParser = embedded
 	p.sepParser = separator
 }
 
-func (p *ManyParser) Match(s *Scanner) *Node {
-	var nodes []*Node
+func (p *ManyParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
+	var nodes []T
+	start := s.position
 
 	i := 0
 	lastValidPos := s.position
 
 	for {
-		matchedsep := false
-		var sepnode *Node
-
 		if i > 0 && p.sepParser != nil {
-			sepnode = s.applyRule(p.sepParser)
-			if sepnode == nil {
+			_, ok := s.applyRule(p.sepParser)
+			if !ok {
 				break
 			}
-
-			matchedsep = true
 		}
 		i++
 
-		node := s.applyRule(p.subParser)
-		if node == nil {
+		node, ok := s.applyRule(p.subParser)
+		if !ok {
 			break
 		}
-
-		if matchedsep {
-			nodes = append(nodes, sepnode)
+		if i == 1 {
+			start = node.Start
 		}
 
-		nodes = append(nodes, node)
+		nodes = append(nodes, node.Payload)
 		lastValidPos = s.position
 	}
 	s.setPosition(lastValidPos)
 
 	if len(nodes) >= 1 {
-		return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
+		return Node[T]{Matched: s.input[start:s.position], Start: start, Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
 	}
 
-	return nil
+	return Node[T]{}, false
 }

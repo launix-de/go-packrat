@@ -1,19 +1,30 @@
 package packrat
 
 import "testing"
+import "strconv"
 
 func TestLeftRecursion(t *testing.T) {
-	input := "5-1-4-3"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	//input := "5-1-4-3"
+	//scanner := NewScanner[int](input, SkipWhitespaceRegex)
+	scanner := NewScanner[int]("1", SkipWhitespaceRegex)
 
-	emptyParser := NewEmptyParser()
-	emptyParser1 := NewAndParser(emptyParser)
+	emptyParser := NewEmptyParser(0)
+	emptyParser1 := NewAndParser(func (s string, a ...int) int {
+		return a[0]
+	}, emptyParser)
 
-	numParser := NewRegexParser(`\d+`, false, true)
-	numCombo1 := NewAndParser(emptyParser1, emptyParser1, numParser)
-	minusParser := NewAtomParser(`-`, false, true)
+	numParser := NewRegexParser(func (s string) int {
+		i, _ := strconv.ParseInt(s, 10, 32)
+		return int(i)
+	}, `\d+`, false, true)
+	numCombo1 := NewAndParser(func (s string, a ...int) int {
+		return a[0] + a[1] + a[2]
+	}, emptyParser1, emptyParser1, numParser)
+	minusParser := NewAtomParser(0, `-`, false, true)
 
-	termParser := NewAndParser()
+	termParser := NewAndParser(func (s string, a ...int) int {
+		return a[0] + a[2]
+	})
 	exprParser := NewOrParser(termParser, numCombo1)
 	termParser.Set(exprParser, minusParser, numCombo1)
 
@@ -23,6 +34,9 @@ func TestLeftRecursion(t *testing.T) {
 	} else {
 		if n.Parser != exprParser {
 			t.Error("Term parser creates node with wrong parser")
+		}
+		if n.Payload != 13 {
+			t.Error("Term parser creates node with wrong payload")
 		}
 	}
 }

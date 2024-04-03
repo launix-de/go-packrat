@@ -7,16 +7,17 @@
 
 package packrat
 
-type EmptyParser struct {
+type EmptyParser[T any] struct {
 	// Stub field to prevent compiler from optimizing out &EmptyParser{}
+	value T
 	_hidden bool
 }
 
-func NewEmptyParser() *EmptyParser {
-	return &EmptyParser{}
+func NewEmptyParser[T any](value T) *EmptyParser[T] {
+	return &EmptyParser[T]{value: value}
 }
 
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
-func (p *EmptyParser) Match(s *Scanner) *Node {
-	return &Node{Matched: emptyString, Start: s.position, Parser: p}
+func (p *EmptyParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
+	return Node[T]{Matched: emptyString, Start: s.position, Parser: p, Payload: p.value}, true
 }

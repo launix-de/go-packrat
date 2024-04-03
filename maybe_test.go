@@ -10,10 +10,10 @@ import "testing"
 
 func TestMaybe(t *testing.T) {
 	input := "Hello"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
-	helloParser := NewAtomParser("Hello", false, true)
-	helloAndWorldParser := NewMaybeParser(helloParser)
+	helloParser := NewAtomParser(17, "Hello", false, true)
+	helloAndWorldParser := NewMaybeParser(13, helloParser)
 
 	n, err := ParsePartial(helloAndWorldParser, scanner)
 	if err != nil {
@@ -25,17 +25,20 @@ func TestMaybe(t *testing.T) {
 		if n.Matched != input {
 			t.Error("Maybe combinator doesn't match complete input")
 		}
+		if n.Payload != 17 {
+			t.Error("Maybe combinator doesn't produce correct payload")
+		}
 	}
 
 	irregularInput := "Sonne"
-	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
-	irregularParser := NewMaybeParser(helloParser)
+	irregularScanner := NewScanner[int](irregularInput, SkipWhitespaceRegex)
+	irregularParser := NewMaybeParser(13, helloParser)
 
 	in, ierr := ParsePartial(irregularParser, irregularScanner)
 	if ierr != nil {
 		t.Error("Maybe combinator doesn't match irregular input")
 	}
-	if len(in.Children) != 0 {
-		t.Error("Maybe combinator doesn't produce zero children for irregular input")
+	if in.Payload != 13 {
+		t.Error("Maybe combinator doesn't produce correct payload")
 	}
 }

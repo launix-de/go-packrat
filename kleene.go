@@ -7,55 +7,51 @@
 
 package packrat
 
-type KleeneParser struct {
-	subParser, sepParser Parser
+type KleeneParser[T any] struct {
+	callback func(string, ...T) T
+	subParser, sepParser Parser[T]
 }
 
-func NewKleeneParser(subparser Parser, sepparser Parser) *KleeneParser {
-	return &KleeneParser{subParser: subparser, sepParser: sepparser}
+func NewKleeneParser[T any](callback func(string, ...T) T, subparser Parser[T], sepparser Parser[T]) *KleeneParser[T] {
+	return &KleeneParser[T]{callback: callback, subParser: subparser, sepParser: sepparser}
 }
 
-func (p *KleeneParser) Set(embedded Parser, separator Parser) {
+func (p *KleeneParser[T]) Set(embedded Parser[T], separator Parser[T]) {
 	p.subParser = embedded
 	p.sepParser = separator
 }
 
 // Match matches the embedded parser or the empty string.
-func (p *KleeneParser) Match(s *Scanner) *Node {
-	var nodes []*Node
+func (p *KleeneParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
+	var nodes []T
+	start := s.position
 
 	i := 0
 	lastValidPosition := s.position
 	for {
-		matchedsep := false
-		var sepnode *Node
-
 		if i > 0 && p.sepParser != nil {
-			sepnode = s.applyRule(p.sepParser)
-			if sepnode == nil {
+			_, ok := s.applyRule(p.sepParser)
+			if !ok {
 				break
 			}
-
-			matchedsep = true
 		}
 		i++
 
-		node := s.applyRule(p.subParser)
-		if node == nil {
+		node, ok := s.applyRule(p.subParser)
+		if !ok {
 			break
 		}
-
-		if matchedsep {
-			nodes = append(nodes, sepnode)
+		if i == 1 {
+			start = node.Start
 		}
 
-		nodes = append(nodes, node)
+		nodes = append(nodes, node.Payload)
 		lastValidPosition = s.position
 	}
 	s.setPosition(lastValidPosition)
 
 	if len(nodes) == 0 {
-		return &Node{Matched: "", Start: s.position, Parser: p, Children: nil}
+		return Node[T]{Matched: "", Start: s.position, Parser: p, Payload: p.callback("")}, true
 	}
-	return &Node{Matched: s.input[nodes[0].Start:s.position], Start: nodes[0].Start, Parser: p, Children: nodes}
+	return Node[T]{Matched: s.input[start:s.position], Start: start, Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
 }
