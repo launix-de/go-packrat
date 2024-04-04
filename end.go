@@ -24,7 +24,7 @@ func (p *EndParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 	}
 
 	if len(s.remainingInput) == 0 {
-		return Node[T]{Parser: p, Payload: p.value}, true
+		return Node[T]{Payload: p.value}, true
 	}
 
 	s.setPosition(startPosition)

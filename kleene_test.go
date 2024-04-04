@@ -26,9 +26,6 @@ func TestKleene(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Kleene combinator creates node with wrong parser")
-		}
 		if n.Payload != 3 {
 			t.Error("Kleene combinator doesn't produce 3 children")
 		}
@@ -70,9 +67,6 @@ func TestKleeneSeparator(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Kleene combinator creates node with wrong parser")
-		}
 		if n.Payload != 6 {
 			t.Error("Kleene combinator doesn't produce 3 children")
 		}

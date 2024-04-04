@@ -22,9 +22,6 @@ func TestAndInsensitive(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("And combinator creates node with wrong parser")
-		}
 		if n.Payload != "ab" {
 			t.Error("And combinator creates wrong result")
 		}
@@ -44,9 +41,6 @@ func TestAnd(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("And combinator creates node with wrong parser")
-		}
 		if n.Payload != 3 {
 			t.Error("And combinator doesn't match payload")
 		}
@@ -74,9 +68,6 @@ func TestOr(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Or combinator creates node with wrong parser")
-		}
 		if n.Payload != 2 {
 			t.Error("Or combinator doesn't match payload")
 		}

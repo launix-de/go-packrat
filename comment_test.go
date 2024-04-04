@@ -22,9 +22,6 @@ func TestComments(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("And combinator creates node with wrong parser")
-		}
 		if n.Payload != 13 {
 			t.Error("And combinator creates wrong payload")
 		}

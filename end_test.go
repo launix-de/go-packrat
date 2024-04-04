@@ -15,9 +15,6 @@ func TestEndParser(t *testing.T) {
 		t.Error(err)
 	}
 
-	if n.Parser != helloAndWorldParser {
-		t.Error("End Test combinator creates node with wrong parser")
-	}
 	if n.Payload != 9 {
 		t.Error("End Test combinator doesn't produce correct payload")
 	}

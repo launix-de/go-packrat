@@ -55,5 +55,5 @@ func (p *AtomParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	return Node[T]{Parser: p, Payload: p.value}, true
+	return Node[T]{Payload: p.value}, true
 }
