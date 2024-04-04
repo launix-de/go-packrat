@@ -38,5 +38,5 @@ func (p *AndParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		nodes = append(nodes, node.Payload)
 	}
 
-	return Node[T]{Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
+	return Node[T]{Payload: p.callback(s.input[start:s.position], nodes...)}, true
 }

@@ -15,9 +15,6 @@ func TestEmptyParser(t *testing.T) {
 		t.Error(err)
 	}
 
-	if n.Parser != helloAndWorldParser {
-		t.Error("Empty Test combinator creates node with wrong parser")
-	}
 	if n.Payload != 8 {
 		t.Error("Empty Test combinator doesn't produce correct payload")
 	}

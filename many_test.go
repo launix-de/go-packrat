@@ -27,9 +27,6 @@ func TestManySeparator(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Many combinator creates node with wrong parser")
-		}
 		if n.Payload != 8 {
 			t.Error("Many combinator doesn't produce correct payload")
 		}
@@ -70,9 +67,6 @@ func TestManySeparatorRegex(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Many combinator creates node with wrong parser")
-		}
 		if n.Payload != 68 {
 			t.Error("Many combinator doesn't produce correct payload")
 		}
@@ -110,9 +104,6 @@ func TestMany(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Many combinator creates node with wrong parser")
-		}
 		if n.Payload != 15 {
 			t.Error("Many combinator doesn't produce correct payload")
 		}

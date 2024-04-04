@@ -19,9 +19,6 @@ func TestMaybe(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Maybe combinator creates node with wrong parser")
-		}
 		if n.Payload != 17 {
 			t.Error("Maybe combinator doesn't produce correct payload")
 		}

@@ -53,5 +53,5 @@ func (p *RegexParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	return Node[T]{Parser: p, Payload: p.callback(*matched)}, true
+	return Node[T]{Payload: p.callback(*matched)}, true
 }

@@ -13,9 +13,6 @@ func TestDoubleEmpty(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != termParser {
-			t.Error("Term parser creates node with wrong parser")
-		}
 		if n.Payload != 14 {
 			t.Error("Term parser creates node with wrong payload")
 		}

@@ -27,8 +27,8 @@ func (p *MaybeParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 
 	if !ok {
 		s.setPosition(startPosition)
-		return Node[T]{Parser: p, Payload: p.valueFalse}, true
+		return Node[T]{Payload: p.valueFalse}, true
 	}
 
-	return Node[T]{Parser: p, Payload: node.Payload}, true
+	return Node[T]{Payload: node.Payload}, true
 }

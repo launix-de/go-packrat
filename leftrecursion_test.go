@@ -32,9 +32,6 @@ func TestLeftRecursion(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != exprParser {
-			t.Error("Term parser creates node with wrong parser")
-		}
 		if n.Payload != 13 {
 			t.Error("Term parser creates node with wrong payload: " + fmt.Sprint(n.Payload))
 		}
