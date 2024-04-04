@@ -40,8 +40,6 @@ func (p *RegexParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	whitepos := s.position
-
 	matched := s.MatchRegexp(p.regex)
 	if matched == nil {
 		s.setPosition(startPosition)
@@ -55,5 +53,5 @@ func (p *RegexParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	return Node[T]{Start: whitepos, Parser: p, Payload: p.callback(*matched)}, true
+	return Node[T]{Parser: p, Payload: p.callback(*matched)}, true
 }
