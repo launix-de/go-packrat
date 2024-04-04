@@ -1,3 +1,3 @@
-module github.com/launix-de/go-packrat/v2
+module github.com/launix-de/go-packrat
 
 go 1.21
