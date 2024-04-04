@@ -1,12 +1,12 @@
 package packrat
 
+import "fmt"
 import "testing"
 import "strconv"
 
 func TestLeftRecursion(t *testing.T) {
-	//input := "5-1-4-3"
-	//scanner := NewScanner[int](input, SkipWhitespaceRegex)
-	scanner := NewScanner[int]("1", SkipWhitespaceRegex)
+	input := "5-1-4-3"
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
 	emptyParser := NewEmptyParser(0)
 	emptyParser1 := NewAndParser(func (s string, a ...int) int {
@@ -36,7 +36,7 @@ func TestLeftRecursion(t *testing.T) {
 			t.Error("Term parser creates node with wrong parser")
 		}
 		if n.Payload != 13 {
-			t.Error("Term parser creates node with wrong payload")
+			t.Error("Term parser creates node with wrong payload: " + fmt.Sprint(n.Payload))
 		}
 	}
 }
