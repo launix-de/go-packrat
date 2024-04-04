@@ -42,8 +42,6 @@ func (p *AtomParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	whitepos := s.position
-
 	matched := s.MatchRegexp(p.r)
 	if matched == nil {
 		s.setPosition(startPosition)
@@ -57,5 +55,5 @@ func (p *AtomParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	return Node[T]{Start: whitepos, Parser: p, Payload: p.value}, true
+	return Node[T]{Parser: p, Payload: p.value}, true
 }

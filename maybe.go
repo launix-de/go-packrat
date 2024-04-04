@@ -30,5 +30,5 @@ func (p *MaybeParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		return Node[T]{Parser: p, Payload: p.valueFalse}, true
 	}
 
-	return Node[T]{Start: node.Start, Parser: p, Payload: node.Payload}, true
+	return Node[T]{Parser: p, Payload: node.Payload}, true
 }

@@ -41,9 +41,6 @@ func (p *KleeneParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		if !ok {
 			break
 		}
-		if i == 1 {
-			start = node.Start
-		}
 
 		nodes = append(nodes, node.Payload)
 		lastValidPosition = s.position
@@ -51,7 +48,7 @@ func (p *KleeneParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 	s.setPosition(lastValidPosition)
 
 	if len(nodes) == 0 {
-		return Node[T]{Start: s.position, Parser: p, Payload: p.callback("")}, true
+		return Node[T]{Parser: p, Payload: p.callback("")}, true
 	}
-	return Node[T]{Start: start, Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
+	return Node[T]{Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
 }

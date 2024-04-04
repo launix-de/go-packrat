@@ -29,17 +29,14 @@ func (p *AndParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 	start := s.position
 
 	startPosition := s.position
-	for i, c := range p.subParser {
+	for _, c := range p.subParser {
 		node, ok := s.applyRule(c)
 		if !ok {
 			s.setPosition(startPosition)
 			return Node[T]{}, false
 		}
-		if i == 0 {
-			start = node.Start
-		}
 		nodes = append(nodes, node.Payload)
 	}
 
-	return Node[T]{Start: start, Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
+	return Node[T]{Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
 }
