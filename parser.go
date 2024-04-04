@@ -29,13 +29,16 @@ func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 
 	m := s.Recall(rule, startPosition)
 	if m == nil {
-		lr := &Lr[T]{seed: Node[T]{}, seedOk: false, rule: rule, head: nil, next: s.invocationStack}
-		s.invocationStack = lr
+		lr := &s.invocationStack[s.invocationStackIdx]
+		lr.seedOk = false
+		lr.rule = rule
+		lr.head = nil
+		s.invocationStackIdx++
 		m := &MemoEntry[T]{Lr: lr, Position: startPosition}
 		memmap[rule] = m
 		ans, ok := rule.Match(s)
-		s.invocationStack = s.invocationStack.next
-		m.Position = s.position
+		s.invocationStackIdx--
+		m.Position = s.position // update Lr position
 		if lr.head != nil {
 			lr.seed = ans
 			lr.seedOk = ok
