@@ -18,9 +18,6 @@ func TestEndParser(t *testing.T) {
 	if n.Parser != helloAndWorldParser {
 		t.Error("End Test combinator creates node with wrong parser")
 	}
-	if n.Matched != input {
-		t.Error("End Test combinator doesn't match complete input")
-	}
 	if n.Payload != 9 {
 		t.Error("End Test combinator doesn't produce correct payload")
 	}

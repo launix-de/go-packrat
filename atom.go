@@ -57,5 +57,5 @@ func (p *AtomParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	return Node[T]{Matched: *matched, Start: whitepos, Parser: p, Payload: p.value}, true
+	return Node[T]{Start: whitepos, Parser: p, Payload: p.value}, true
 }

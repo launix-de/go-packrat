@@ -47,9 +47,6 @@ func TestAnd(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("And combinator creates node with wrong parser")
 		}
-		if n.Matched != input {
-			t.Error("And combinator doesn't match complete input")
-		}
 		if n.Payload != 3 {
 			t.Error("And combinator doesn't match payload")
 		}
@@ -79,9 +76,6 @@ func TestOr(t *testing.T) {
 	} else {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Or combinator creates node with wrong parser")
-		}
-		if n.Matched != input {
-			t.Error("Or combinator doesn't match complete input")
 		}
 		if n.Payload != 2 {
 			t.Error("Or combinator doesn't match payload")

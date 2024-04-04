@@ -30,9 +30,6 @@ func TestManySeparator(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Many combinator creates node with wrong parser")
 		}
-		if n.Matched != input {
-			t.Error("Many combinator doesn't match complete input")
-		}
 		if n.Payload != 8 {
 			t.Error("Many combinator doesn't produce correct payload")
 		}
@@ -75,9 +72,6 @@ func TestManySeparatorRegex(t *testing.T) {
 	} else {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Many combinator creates node with wrong parser")
-		}
-		if n.Matched != "23, 45" {
-			t.Error("Many combinator doesn't match complete input")
 		}
 		if n.Payload != 68 {
 			t.Error("Many combinator doesn't produce correct payload")
