@@ -50,7 +50,6 @@ type Lr[T any] struct {
 	seedOk bool
 	rule Parser[T]
 	head *Head[T]
-	next *Lr[T]
 }
 
 type Scanner[T any] struct {
@@ -59,7 +58,8 @@ type Scanner[T any] struct {
 	position        int
 	memoization     map[int]map[Parser[T]]*MemoEntry[T]
 	heads           map[int]*Head[T]
-	invocationStack *Lr[T]
+	invocationStack [200]Lr[T]
+	invocationStackIdx int
 	breaks          map[int]bool
 
 	skipRegex *regexp.Regexp
@@ -103,16 +103,16 @@ func (s *Scanner[T]) SetupLr(rule Parser[T], l *Lr[T]) {
 	if l.head == nil {
 		l.head = NewHead(rule)
 	}
-	stack := s.invocationStack
-	for stack != nil && stack.head != l.head {
-		stack.head = l.head
+	i := s.invocationStackIdx - 1
+	for i >= 0 && s.invocationStack[i].head != l.head {
+		s.invocationStack[i].head = l.head
 		newInvolved := make(map[Parser[T]]bool)
 		for k := range l.head.involvedSet {
 			newInvolved[k] = true
 		}
-		newInvolved[stack.rule] = true
+		newInvolved[s.invocationStack[i].rule] = true
 		l.head.involvedSet = newInvolved
-		stack = stack.next
+		i--
 	}
 }
 
