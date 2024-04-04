@@ -37,15 +37,16 @@ import (
 
 func main(){
     input := "Hello World"
-    scanner := NewScanner(input, true)
+    scanner := NewScanner[string](input, true)
 
-    helloParser := NewAtomParser("Hello", true)
-    worldParser := NewAtomParser("World", true)
-    helloAndWorldParser := NewAndParser(helloParser, worldParser)
+    helloParser := NewAtomParser("noun", "Hello", true)
+    worldParser := NewAtomParser("noun", "World", true)
+    helloAndWorldParser := NewAndParser(func (s string, parts ...string) string {
+	    return "found " + parts[0] + " + " + parts[1]
+    }, helloParser, worldParser)
 
-    n, err := Parse(helloAndWorldParser, scanner)
-    // n is the AST root node
-    // n.Children is a slice containing a node for both the Hello and World parser
+    result, err := Parse(helloAndWorldParser, scanner)
+    // result will contain "found noun + noun"
 }
 ```
 
