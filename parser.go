@@ -38,6 +38,7 @@ func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 		m.Position = s.position
 		if lr.head != nil {
 			lr.seed = ans
+			lr.seedOk = ok
 			return s.LrAnswer(rule, startPosition, m)
 		}
 
@@ -64,8 +65,6 @@ type Node[T any] struct {
 	Start    int
 	Parser   Parser[T]
 	Payload  T
-	// TODO: remove Children, add Payload t; and, kleene, many have func(string, T...) T, empty, end, string and regex have func(string) T, maybe has func(string, T) T
-	// will produce a resulting payload
 }
 
 type ParserError[T any] struct {
