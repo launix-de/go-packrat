@@ -7,27 +7,28 @@
 
 package packrat
 
-type MaybeParser struct {
-	subParser Parser
+type MaybeParser[T any] struct {
+	valueFalse T
+	subParser Parser[T]
 }
 
-func NewMaybeParser(subparser Parser) *MaybeParser {
-	return &MaybeParser{subParser: subparser}
+func NewMaybeParser[T any](valueFalse T, subparser Parser[T]) *MaybeParser[T] {
+	return &MaybeParser[T]{valueFalse: valueFalse, subParser: subparser}
 }
 
-func (p *MaybeParser) Set(embedded Parser) {
+func (p *MaybeParser[T]) Set(embedded Parser[T]) {
 	p.subParser = embedded
 }
 
 // Match matches the embedded parser or the empty string.
-func (p *MaybeParser) Match(s *Scanner) *Node {
+func (p *MaybeParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 	startPosition := s.position
-	node := s.applyRule(p.subParser)
+	node, ok := s.applyRule(p.subParser)
 
-	if node == nil {
+	if !ok {
 		s.setPosition(startPosition)
-		return &Node{Matched: emptyString, Parser: p}
+		return Node[T]{Payload: p.valueFalse}, true
 	}
 
-	return &Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{node}}
+	return Node[T]{Payload: node.Payload}, true
 }

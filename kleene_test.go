@@ -11,67 +11,82 @@ import "testing"
 
 func TestKleene(t *testing.T) {
 	input := "Hello Hello Hello"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
-	helloParser := NewAtomParser("Hello", false, true)
-	helloAndWorldParser := NewKleeneParser(helloParser, nil)
+	helloParser := NewAtomParser(1, "Hello", false, true)
+	helloAndWorldParser := NewKleeneParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, nil)
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Kleene combinator creates node with wrong parser")
-		}
-		if len(n.Children) != 3 {
+		if n.Payload != 3 {
 			t.Error("Kleene combinator doesn't produce 3 children")
 		}
 	}
 
 	irregularInput := "Sonne"
-	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
-	irregularParser := NewKleeneParser(helloParser, nil)
+	irregularScanner := NewScanner[int](irregularInput, SkipWhitespaceRegex)
+	irregularParser := NewKleeneParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, nil)
 
 	in, ierr := ParsePartial(irregularParser, irregularScanner)
 	if ierr != nil {
 		t.Error("Kleene combinator doesn't match irregular input")
 	}
-	if len(in.Children) != 0 {
+	if in.Payload != 0 {
 		t.Error("Kleene combinator doesn't produce zero children for irregular input")
 	}
 }
 func TestKleeneSeparator(t *testing.T) {
 	input := "  Hello, Hello, Hello"
-	scanner := NewScanner(input, SkipWhitespaceRegex)
+	scanner := NewScanner[int](input, SkipWhitespaceRegex)
 
-	helloParser := NewAtomParser("Hello", false, true)
-	sepParser := NewAtomParser(",", false, true)
-	helloAndWorldParser := NewKleeneParser(helloParser, sepParser)
+	helloParser := NewAtomParser(2, "Hello", false, true)
+	sepParser := NewAtomParser(0, ",", false, true)
+	helloAndWorldParser := NewKleeneParser(func (s string, a ...int) int {
+		r := 0
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, sepParser)
 
 	n, err := Parse(helloAndWorldParser, scanner)
 	if err != nil {
 		t.Error(err)
 	} else {
-		if n.Parser != helloAndWorldParser {
-			t.Error("Kleene combinator creates node with wrong parser")
-		}
-		if n.Matched != "Hello, Hello, Hello" {
-			t.Error("Kleene combinator doesn't match complete input")
-		}
-		if len(n.Children) != 5 {
+		if n.Payload != 6 {
 			t.Error("Kleene combinator doesn't produce 3 children")
 		}
 	}
 
 	irregularInput := "Sonne"
-	irregularScanner := NewScanner(irregularInput, SkipWhitespaceRegex)
-	irregularParser := NewKleeneParser(helloParser, nil)
+	irregularScanner := NewScanner[int](irregularInput, SkipWhitespaceRegex)
+	irregularParser := NewKleeneParser(func (s string, a ...int) int {
+		r := 9
+		for _, v := range a {
+			r += v
+		}
+		return r
+	}, helloParser, nil)
 
 	in, ierr := ParsePartial(irregularParser, irregularScanner)
 	if ierr != nil {
 		t.Error("Kleene combinator doesn't match irregular input")
 	}
-	if len(in.Children) != 0 {
+	if in.Payload != 9 {
 		t.Error("Kleene combinator doesn't produce zero children for irregular input")
 	}
 }

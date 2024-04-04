@@ -1,3 +1,3 @@
-module github.com/launix-de/go-packrat
+module github.com/cphaensch/go-packrat
 
-go 1.15
+go 1.21

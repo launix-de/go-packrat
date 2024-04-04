@@ -7,28 +7,28 @@
 
 package packrat
 
-type OrParser struct {
-	subParser []Parser
+type OrParser[T any] struct {
+	subParser []Parser[T]
 }
 
-func NewOrParser(subparser ...Parser) *OrParser {
-	return &OrParser{subParser: subparser}
+func NewOrParser[T any](subparser ...Parser[T]) *OrParser[T] {
+	return &OrParser[T]{subParser: subparser}
 }
 
-func (p *OrParser) Set(embedded ...Parser) {
+func (p *OrParser[T]) Set(embedded ...Parser[T]) {
 	p.subParser = embedded
 }
 
 // Match matches all given parsers sequentially.
-func (p *OrParser) Match(s *Scanner) *Node {
+func (p *OrParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 	startPosition := s.position
 	for _, c := range p.subParser {
-		node := s.applyRule(c)
-		if node != nil {
-			return &Node{Matched: node.Matched, Start: node.Start, Parser: p, Children: []*Node{node}}
+		node, ok := s.applyRule(c)
+		if ok {
+			return Node[T]{Payload: node.Payload}, true
 		}
 		s.setPosition(startPosition)
 	}
 
-	return nil
+	return Node[T]{}, false
 }

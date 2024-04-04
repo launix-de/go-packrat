@@ -14,67 +14,66 @@ import (
 	"unicode"
 )
 
-type Parser interface {
-	Match(s *Scanner) *Node
+type Parser[T any] interface {
+	Match(s *Scanner[T]) (Node[T], bool)
 }
 
-func (s *Scanner) applyRule(rule Parser) *Node {
+func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 	startPosition := s.position
 
 	memmap, memmapExists := s.memoization[startPosition]
 	if !memmapExists {
-		memmap = make(map[Parser]*MemoEntry)
+		memmap = make(map[Parser[T]]*MemoEntry[T])
 		s.memoization[startPosition] = memmap
 	}
 
 	m := s.Recall(rule, startPosition)
 	if m == nil {
-		lr := &Lr{seed: nil, rule: rule, head: nil, next: s.invocationStack}
+		lr := &Lr[T]{seed: Node[T]{}, seedOk: false, rule: rule, head: nil, next: s.invocationStack}
 		s.invocationStack = lr
-		m := &MemoEntry{Lr: lr, Position: startPosition}
+		m := &MemoEntry[T]{Lr: lr, Position: startPosition}
 		memmap[rule] = m
-		ans := rule.Match(s)
+		ans, ok := rule.Match(s)
 		s.invocationStack = s.invocationStack.next
 		m.Position = s.position
 		if lr.head != nil {
 			lr.seed = ans
+			lr.seedOk = ok
 			return s.LrAnswer(rule, startPosition, m)
 		}
 
 		m.Lr = nil
 		m.Ans = ans
-		return ans
+		m.Ok = ok
+		return ans, ok
 	}
 
 	s.setPosition(m.Position)
 
 	if m.Lr != nil {
 		s.SetupLr(rule, m.Lr)
-		return m.Lr.seed
+		return m.Lr.seed, m.Lr.seedOk
 	}
 
-	return m.Ans
+	return m.Ans, m.Ok
 }
 
 var emptyString = ""
 
-type Node struct {
-	Matched  string
-	Start    int
-	Parser   Parser
-	Children []*Node
+type Node[T any] struct {
+	Payload  T
 }
 
-type ParserError struct {
-	Parser        Parser
+type ParserError[T any] struct {
+	Parser        Parser[T]
 	Line          int
 	Column        int
 	Position      int
-	FailedParsers []Parser
+	FailedParsers []Parser[T]
 	Input         string
 }
 
-func (e *ParserError) Error() string {
+func (e *ParserError[T]) Error() string {
 	linestartpos := e.Position - 30
 
 	startpos := linestartpos
@@ -90,24 +89,24 @@ func (e *ParserError) Error() string {
 		}
 	}
 
-	atomParsers := make(map[*AtomParser]bool)
-	regexParsers := make(map[*RegexParser]bool)
+	atomParsers := make(map[*AtomParser[T]]bool)
+	regexParsers := make(map[*RegexParser[T]]bool)
 	eofParser := false
 	allskipws := true
 
 	for _, p := range e.FailedParsers {
 		switch pa := p.(type) {
-		case *AtomParser:
+		case *AtomParser[T]:
 			atomParsers[pa] = true
 			if !pa.skipWs {
 				allskipws = false
 			}
-		case *RegexParser:
+		case *RegexParser[T]:
 			regexParsers[pa] = true
 			if !pa.skipWs {
 				allskipws = false
 			}
-		case *EndParser:
+		case *EndParser[T]:
 			eofParser = true
 		}
 	}
@@ -167,14 +166,14 @@ func (e *ParserError) Error() string {
 	return builder.String()
 }
 
-func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	node := originalScanner.applyRule(p)
-	if node != nil {
+func ParsePartial[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *ParserError[T]) {
+	node, ok := originalScanner.applyRule(p)
+	if ok {
 		return node, nil
 	}
 
 	maxPos := 0
-	var failedParsers []Parser
+	var failedParsers []Parser[T]
 	for index := len(originalScanner.input) - 1; index >= 0; index-- {
 		m, mExists := originalScanner.memoization[index]
 		if mExists && len(m) > 0 {
@@ -193,27 +192,27 @@ func ParsePartial(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 		lastBreak = 0
 	}
 	column := maxPos - lastBreak + 1
-	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
-	return nil, e
+	e := &ParserError[T]{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
+	return Node[T]{}, e
 }
 
-func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
-	node := originalScanner.applyRule(p)
-	if node != nil {
+func Parse[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *ParserError[T]) {
+	node, ok := originalScanner.applyRule(p)
+	if ok {
 		originalScanner.Skip()
 		if len(originalScanner.remainingInput) > 0 {
 			consumed := originalScanner.input[:originalScanner.position]
 			line := strings.Count(consumed, "\n") + 1
 			column := originalScanner.position - strings.LastIndex(consumed, "\n") + 1
-			e := &ParserError{Parser: p, Line: line, Column: column, Position: originalScanner.position, Input: originalScanner.input}
-			return nil, e
+			e := &ParserError[T]{Parser: p, Line: line, Column: column, Position: originalScanner.position, Input: originalScanner.input}
+			return Node[T]{}, e
 		}
 
 		return node, nil
 	}
 
 	maxPos := 0
-	var failedParsers []Parser
+	var failedParsers []Parser[T]
 	for index := len(originalScanner.input) - 1; index >= 0; index-- {
 		m := originalScanner.memoization[index]
 		if len(m) > 0 {
@@ -232,7 +231,7 @@ func Parse(p Parser, originalScanner *Scanner) (*Node, *ParserError) {
 		lastBreak = 0
 	}
 	column := maxPos - lastBreak + 1
-	e := &ParserError{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
+	e := &ParserError[T]{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 
-	return nil, e
+	return Node[T]{}, e
 }
