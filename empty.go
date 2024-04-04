@@ -19,5 +19,5 @@ func NewEmptyParser[T any](value T) *EmptyParser[T] {
 
 // Match matches only the given string. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
 func (p *EmptyParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
-	return Node[T]{Matched: emptyString, Start: s.position, Parser: p, Payload: p.value}, true
+	return Node[T]{Start: s.position, Parser: p, Payload: p.value}, true
 }

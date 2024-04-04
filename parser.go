@@ -61,7 +61,6 @@ func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 var emptyString = ""
 
 type Node[T any] struct {
-	Matched  string
 	Start    int
 	Parser   Parser[T]
 	Payload  T

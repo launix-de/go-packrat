@@ -51,7 +51,7 @@ func (p *ManyParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 	s.setPosition(lastValidPos)
 
 	if len(nodes) >= 1 {
-		return Node[T]{Matched: s.input[start:s.position], Start: start, Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
+		return Node[T]{Start: start, Parser: p, Payload: p.callback(s.input[start:s.position], nodes...)}, true
 	}
 
 	return Node[T]{}, false

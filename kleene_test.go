@@ -73,9 +73,6 @@ func TestKleeneSeparator(t *testing.T) {
 		if n.Parser != helloAndWorldParser {
 			t.Error("Kleene combinator creates node with wrong parser")
 		}
-		if n.Matched != "Hello, Hello, Hello" {
-			t.Error("Kleene combinator doesn't match complete input")
-		}
 		if n.Payload != 6 {
 			t.Error("Kleene combinator doesn't produce 3 children")
 		}
