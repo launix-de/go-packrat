@@ -9,6 +9,7 @@
 package packrat
 
 import (
+	"sync"
 	"regexp"
 	"unicode"
 )
@@ -27,8 +28,12 @@ type Head[T any] struct {
 	evalSet     map[Parser[T]]bool
 }
 
-func NewHead[T any](rule Parser[T]) *Head[T] {
-	return &Head[T]{rule: rule, involvedSet: make(map[Parser[T]]bool), evalSet: make(map[Parser[T]]bool)}
+func (s *Scanner[T]) NewHead(rule Parser[T]) *Head[T] {
+	h := s.headpool.Get().(*Head[T])
+	h.rule = rule
+	clear(h.involvedSet)
+	clear(h.evalSet)
+	return h
 }
 
 func (h *Head[T]) IsInvolved(rule Parser[T]) bool {
@@ -61,6 +66,9 @@ type Scanner[T any] struct {
 	heads           map[int]*Head[T]
 	invocationStack *Lr[T]
 	breaks          map[int]bool
+	
+	headpool        sync.Pool
+
 
 	skipRegex *regexp.Regexp
 }
@@ -101,7 +109,7 @@ func (s *Scanner[T]) Recall(rule Parser[T], pos int) *MemoEntry[T] {
 
 func (s *Scanner[T]) SetupLr(rule Parser[T], l *Lr[T]) {
 	if l.head == nil {
-		l.head = NewHead(rule)
+		l.head = s.NewHead(rule)
 	}
 	stack := s.invocationStack
 	for stack != nil && stack.head != l.head {
@@ -133,6 +141,7 @@ func (s *Scanner[T]) GrowLr(rule Parser[T], p int, m *MemoEntry[T], h *Head[T]) 
 		m.Ok = ok
 		m.Position = s.position
 	}
+	s.headpool.Put(s.heads[p])
 	delete(s.heads, p)
 	s.setPosition(m.Position)
 	return m.Ans, m.Ok
@@ -160,6 +169,9 @@ var SkipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t
 func NewScanner[T any](input string, skipper *regexp.Regexp) *Scanner[T] {
 	s := &Scanner[T]{input: input, position: 0, memoization: make(map[int]map[Parser[T]]*MemoEntry[T]),
 		heads: make(map[int]*Head[T])}
+	s.headpool.New = func() any {
+		return &Head[T]{nil, make(map[Parser[T]]bool), make(map[Parser[T]]bool)}
+	}
 	s.remainingInput = s.input
 	s.skipRegex = skipper
 	s.breaks = make(map[int]bool)
