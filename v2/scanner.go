@@ -220,3 +220,27 @@ func (s *Scanner[T]) Skip() {
 		s.MatchRegexp(s.skipRegex)
 	}
 }
+
+// GetPosition returns the current position in the input
+func (s *Scanner[T]) GetPosition() int {
+	return s.position
+}
+
+// GetInput returns the full input string
+func (s *Scanner[T]) GetInput() string {
+	return s.input
+}
+
+// Substring returns the substring from start to end positions
+func (s *Scanner[T]) Substring(start, end int) string {
+	if start < 0 {
+		start = 0
+	}
+	if end > len(s.input) {
+		end = len(s.input)
+	}
+	if start >= end {
+		return ""
+	}
+	return s.input[start:end]
+}
