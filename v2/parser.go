@@ -21,17 +21,19 @@ type Parser[T any] interface {
 func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 	startPosition := s.position
 
+	memmap := s.memoization[startPosition]
+	if memmap == nil {
+		memmap = make(map[Parser[T]]*MemoEntry[T])
+		s.memoization[startPosition] = memmap
+	}
+
 	m := s.Recall(rule, startPosition)
 	if m == nil {
 		lr := s.lrPool.Get().(*Lr[T])
 		*lr = Lr[T]{seed: Node[T]{}, seedOk: false, rule: rule, head: nil, next: s.invocationStack}
 		s.invocationStack = lr
-		mIdx, m := s.newMemoEntry()
-		m.Lr = lr
-		m.Position = startPosition
-		m.rule = rule
-		m.nextMemo = posMemo(s.positions[startPosition])
-		s.positions[startPosition] = mIdx | (uint32(posHead(s.positions[startPosition])) << 24)
+		m := &MemoEntry[T]{Lr: lr, Position: startPosition}
+		memmap[rule] = m
 		ans, ok := rule.Match(s)
 		s.invocationStack = s.invocationStack.next
 		m.Position = s.position
@@ -177,13 +179,11 @@ func ParsePartial[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *Pa
 	maxPos := 0
 	var failedParsers []Parser[T]
 	for index := len(originalScanner.input); index >= 0; index-- {
-		mIdx := posMemo(originalScanner.positions[index])
-		if mIdx != 0 {
+		m := originalScanner.memoization[index]
+		if len(m) > 0 {
 			maxPos = index
-			for idx := mIdx; idx != 0; {
-				me := originalScanner.memoAt(idx)
-				failedParsers = append(failedParsers, me.rule)
-				idx = me.nextMemo
+			for k := range m {
+				failedParsers = append(failedParsers, k)
 			}
 			break
 		}
@@ -218,13 +218,11 @@ func Parse[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *ParserErr
 	maxPos := 0
 	var failedParsers []Parser[T]
 	for index := len(originalScanner.input); index >= 0; index-- {
-		mIdx := posMemo(originalScanner.positions[index])
-		if mIdx != 0 {
+		m := originalScanner.memoization[index]
+		if len(m) > 0 {
 			maxPos = index
-			for idx := mIdx; idx != 0; {
-				me := originalScanner.memoAt(idx)
-				failedParsers = append(failedParsers, me.rule)
-				idx = me.nextMemo
+			for k := range m {
+				failedParsers = append(failedParsers, k)
 			}
 			break
 		}
