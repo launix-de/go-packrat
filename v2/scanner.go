@@ -62,27 +62,40 @@ type Scanner[T any] struct {
 	input           string
 	remainingInput  string
 	position        int
-	memoization     map[int]map[Parser[T]]*MemoEntry[T]
+	memoization     []map[Parser[T]]*MemoEntry[T]
 	heads           map[int]*Head[T]
 	invocationStack *Lr[T]
-	breaks          map[int]bool
+	breaks          []bool
 	
 	headpool        sync.Pool
+	lrPool          sync.Pool
 
 
 	skipRegex *regexp.Regexp
 }
 
-// Copy clones the scanner state. Memoization and break maps are shared
+// Copy clones the scanner state. Memoization and break slices are shared.
+// Pools are shared by pointer indirection through the original scanner.
 func (s *Scanner[T]) Copy() *Scanner[T] {
-	ns := *s
-	return &ns
+	ns := &Scanner[T]{
+		input:           s.input,
+		remainingInput:  s.remainingInput,
+		position:        s.position,
+		memoization:     s.memoization,
+		heads:           s.heads,
+		invocationStack: s.invocationStack,
+		breaks:          s.breaks,
+		skipRegex:       s.skipRegex,
+	}
+	ns.headpool.New = s.headpool.New
+	ns.lrPool.New = s.lrPool.New
+	return ns
 }
 
 func (s *Scanner[T]) Recall(rule Parser[T], pos int) *MemoEntry[T] {
-	mmap, mmapExists := s.memoization[pos]
+	mmap := s.memoization[pos]
 	var m *MemoEntry[T]
-	if mmapExists {
+	if mmap != nil {
 		m = mmap[rule]
 	}
 
@@ -167,14 +180,15 @@ var SkipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t
 
 // skipper: use nil, SkipWhitespaceRegex or your very own regex
 func NewScanner[T any](input string, skipper *regexp.Regexp) *Scanner[T] {
-	s := &Scanner[T]{input: input, position: 0, memoization: make(map[int]map[Parser[T]]*MemoEntry[T]),
+	s := &Scanner[T]{input: input, position: 0, memoization: make([]map[Parser[T]]*MemoEntry[T], len(input)+1),
 		heads: make(map[int]*Head[T])}
 	s.headpool.New = func() any {
 		return &Head[T]{nil, make(map[Parser[T]]bool), make(map[Parser[T]]bool)}
 	}
+	s.lrPool.New = func() any { return &Lr[T]{} }
 	s.remainingInput = s.input
 	s.skipRegex = skipper
-	s.breaks = make(map[int]bool)
+	s.breaks = make([]bool, len(input)+1)
 
 	previousWord := false
 	for pos, r := range input {
@@ -216,7 +230,8 @@ func (s *Scanner[T]) MatchRegexp(r *regexp.Regexp) *string {
 }
 
 func (s *Scanner[T]) Skip() {
-	if s.skipRegex != nil {
+	if s.skipRegex != nil && s.position < len(s.input) &&
+		(s.input[s.position] <= ' ' || s.input[s.position] == '/') {
 		s.MatchRegexp(s.skipRegex)
 	}
 }

@@ -23,7 +23,7 @@ func (p *KleeneParser[T]) Set(embedded Parser[T], separator Parser[T]) {
 
 // Match matches the embedded parser or the empty string.
 func (p *KleeneParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
-	var nodes []T
+	nodes := make([]T, 0, 8)
 	start := s.position
 
 	i := 0

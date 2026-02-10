@@ -22,7 +22,7 @@ func (p *ManyParser[T]) Set(embedded Parser[T], separator Parser[T]) {
 }
 
 func (p *ManyParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
-	var nodes []T
+	nodes := make([]T, 0, 8)
 	start := s.position
 
 	i := 0

@@ -21,15 +21,16 @@ type Parser[T any] interface {
 func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 	startPosition := s.position
 
-	memmap, memmapExists := s.memoization[startPosition]
-	if !memmapExists {
+	memmap := s.memoization[startPosition]
+	if memmap == nil {
 		memmap = make(map[Parser[T]]*MemoEntry[T])
 		s.memoization[startPosition] = memmap
 	}
 
 	m := s.Recall(rule, startPosition)
 	if m == nil {
-		lr := &Lr[T]{seed: Node[T]{}, seedOk: false, rule: rule, head: nil, next: s.invocationStack}
+		lr := s.lrPool.Get().(*Lr[T])
+		*lr = Lr[T]{seed: Node[T]{}, seedOk: false, rule: rule, head: nil, next: s.invocationStack}
 		s.invocationStack = lr
 		m := &MemoEntry[T]{Lr: lr, Position: startPosition}
 		memmap[rule] = m
@@ -39,12 +40,15 @@ func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 		if lr.head != nil {
 			lr.seed = ans
 			lr.seedOk = ok
-			return s.LrAnswer(rule, startPosition, m)
+			result, resultOk := s.LrAnswer(rule, startPosition, m)
+			s.lrPool.Put(lr)
+			return result, resultOk
 		}
 
 		m.Lr = nil
 		m.Ans = ans
 		m.Ok = ok
+		s.lrPool.Put(lr)
 		return ans, ok
 	}
 
@@ -174,9 +178,9 @@ func ParsePartial[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *Pa
 
 	maxPos := 0
 	var failedParsers []Parser[T]
-	for index := len(originalScanner.input) - 1; index >= 0; index-- {
-		m, mExists := originalScanner.memoization[index]
-		if mExists && len(m) > 0 {
+	for index := len(originalScanner.input); index >= 0; index-- {
+		m := originalScanner.memoization[index]
+		if len(m) > 0 {
 			maxPos = index
 			for k := range m {
 				failedParsers = append(failedParsers, k)
@@ -213,7 +217,7 @@ func Parse[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *ParserErr
 
 	maxPos := 0
 	var failedParsers []Parser[T]
-	for index := len(originalScanner.input) - 1; index >= 0; index-- {
+	for index := len(originalScanner.input); index >= 0; index-- {
 		m := originalScanner.memoization[index]
 		if len(m) > 0 {
 			maxPos = index

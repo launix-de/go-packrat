@@ -25,7 +25,7 @@ func (p *AndParser[T]) Set(embedded ...Parser[T]) {
 
 // Match matches all given parsers sequentially.
 func (p *AndParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
-	var nodes []T
+	nodes := make([]T, 0, len(p.subParser))
 	start := s.position
 
 	startPosition := s.position

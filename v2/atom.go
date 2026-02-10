@@ -8,24 +8,18 @@
 package packrat
 
 import (
-	"regexp"
+	"strings"
 )
 
 type AtomParser[T any] struct {
-	value T
-	r      *regexp.Regexp
-	skipWs bool
-	atom   string
+	value           T
+	skipWs          bool
+	atom            string
+	caseInsensitive bool
 }
 
 func NewAtomParser[T any](value T, str string, caseInsensitive bool, skipWs bool) *AtomParser[T] {
-	prefix := ""
-	if caseInsensitive {
-		prefix += "(?i)"
-	}
-	prefix += "^"
-	r := regexp.MustCompile(prefix + regexp.QuoteMeta(str))
-	p := &AtomParser[T]{value: value, skipWs: skipWs, r: r, atom: str}
+	p := &AtomParser[T]{value: value, skipWs: skipWs, atom: str, caseInsensitive: caseInsensitive}
 	return p
 }
 
@@ -42,11 +36,24 @@ func (p *AtomParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		}
 	}
 
-	matched := s.MatchRegexp(p.r)
-	if matched == nil {
+	atomLen := len(p.atom)
+	if len(s.remainingInput) < atomLen {
 		s.setPosition(startPosition)
 		return Node[T]{}, false
 	}
+	candidate := s.remainingInput[:atomLen]
+	if p.caseInsensitive {
+		if !strings.EqualFold(candidate, p.atom) {
+			s.setPosition(startPosition)
+			return Node[T]{}, false
+		}
+	} else {
+		if candidate != p.atom {
+			s.setPosition(startPosition)
+			return Node[T]{}, false
+		}
+	}
+	s.move(atomLen)
 
 	if p.skipWs {
 		if !s.isAtBreak() {
