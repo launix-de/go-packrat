@@ -12,6 +12,7 @@ type ManyParser[T any] struct {
 	subParser, sepParser Parser[T]
 	buf []T
 	depth int
+	NoMemo bool
 }
 
 func NewManyParser[T any](callback func(string, ...T) T, subparser Parser[T], sepparser Parser[T]) *ManyParser[T] {
@@ -35,17 +36,20 @@ func (p *ManyParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 
 	i := 0
 	lastValidPos := s.position
-
+	applyFn := s.applyRule
+	if p.NoMemo {
+		applyFn = func(rule Parser[T]) (Node[T], bool) { return rule.Match(s) }
+	}
 	for {
 		if i > 0 && p.sepParser != nil {
-			_, ok := s.applyRule(p.sepParser)
+			_, ok := applyFn(p.sepParser)
 			if !ok {
 				break
 			}
 		}
 		i++
 
-		node, ok := s.applyRule(p.subParser)
+		node, ok := applyFn(p.subParser)
 		if !ok {
 			break
 		}

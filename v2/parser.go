@@ -26,12 +26,12 @@ func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 		lr := s.lrPool.Get().(*Lr[T])
 		*lr = Lr[T]{seed: Node[T]{}, seedOk: false, rule: rule, head: nil, next: s.invocationStack}
 		s.invocationStack = lr
-		m := s.newMemoEntry()
+		mIdx, m := s.newMemoEntry()
 		m.Lr = lr
 		m.Position = startPosition
 		m.rule = rule
-		m.nextMemo = s.memoization[startPosition]
-		s.memoization[startPosition] = m
+		m.nextMemo = posMemo(s.positions[startPosition])
+		s.positions[startPosition] = mIdx | (uint32(posHead(s.positions[startPosition])) << 24)
 		ans, ok := rule.Match(s)
 		s.invocationStack = s.invocationStack.next
 		m.Position = s.position
@@ -177,11 +177,13 @@ func ParsePartial[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *Pa
 	maxPos := 0
 	var failedParsers []Parser[T]
 	for index := len(originalScanner.input); index >= 0; index-- {
-		m := originalScanner.memoization[index]
-		if m != nil {
+		mIdx := posMemo(originalScanner.positions[index])
+		if mIdx != 0 {
 			maxPos = index
-			for e := m; e != nil; e = e.nextMemo {
-				failedParsers = append(failedParsers, e.rule)
+			for idx := mIdx; idx != 0; {
+				me := originalScanner.memoAt(idx)
+				failedParsers = append(failedParsers, me.rule)
+				idx = me.nextMemo
 			}
 			break
 		}
@@ -216,11 +218,13 @@ func Parse[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *ParserErr
 	maxPos := 0
 	var failedParsers []Parser[T]
 	for index := len(originalScanner.input); index >= 0; index-- {
-		m := originalScanner.memoization[index]
-		if m != nil {
+		mIdx := posMemo(originalScanner.positions[index])
+		if mIdx != 0 {
 			maxPos = index
-			for e := m; e != nil; e = e.nextMemo {
-				failedParsers = append(failedParsers, e.rule)
+			for idx := mIdx; idx != 0; {
+				me := originalScanner.memoAt(idx)
+				failedParsers = append(failedParsers, me.rule)
+				idx = me.nextMemo
 			}
 			break
 		}
