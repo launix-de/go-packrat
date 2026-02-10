@@ -20,6 +20,10 @@ type MemoEntry[T any] struct {
 	Ok bool
 
 	Position int
+
+	// internal: linked list within a position's memo chain
+	rule     Parser[T]
+	nextMemo *MemoEntry[T]
 }
 
 type Head[T any] struct {
@@ -62,16 +66,31 @@ type Scanner[T any] struct {
 	input           string
 	remainingInput  string
 	position        int
-	memoization     []map[Parser[T]]*MemoEntry[T]
+	memoization     []*MemoEntry[T]
 	heads           map[int]*Head[T]
 	invocationStack *Lr[T]
 	breaks          []bool
-	
+
 	headpool        sync.Pool
 	lrPool          sync.Pool
 
+	// MemoEntry slab allocator: batch-allocate to reduce per-entry heap allocs
+	memoSlab     []MemoEntry[T]
+	memoSlabPos  int
 
 	skipRegex *regexp.Regexp
+}
+
+const memoSlabSize = 256
+
+func (s *Scanner[T]) newMemoEntry() *MemoEntry[T] {
+	if s.memoSlabPos >= len(s.memoSlab) {
+		s.memoSlab = make([]MemoEntry[T], memoSlabSize)
+		s.memoSlabPos = 0
+	}
+	m := &s.memoSlab[s.memoSlabPos]
+	s.memoSlabPos++
+	return m
 }
 
 // Copy clones the scanner state. Memoization and break slices are shared.
@@ -85,6 +104,8 @@ func (s *Scanner[T]) Copy() *Scanner[T] {
 		heads:           s.heads,
 		invocationStack: s.invocationStack,
 		breaks:          s.breaks,
+		memoSlab:        s.memoSlab,
+		memoSlabPos:     s.memoSlabPos,
 		skipRegex:       s.skipRegex,
 	}
 	ns.headpool.New = s.headpool.New
@@ -92,12 +113,17 @@ func (s *Scanner[T]) Copy() *Scanner[T] {
 	return ns
 }
 
-func (s *Scanner[T]) Recall(rule Parser[T], pos int) *MemoEntry[T] {
-	mmap := s.memoization[pos]
-	var m *MemoEntry[T]
-	if mmap != nil {
-		m = mmap[rule]
+func (s *Scanner[T]) memoLookup(pos int, rule Parser[T]) *MemoEntry[T] {
+	for m := s.memoization[pos]; m != nil; m = m.nextMemo {
+		if m.rule == rule {
+			return m
+		}
 	}
+	return nil
+}
+
+func (s *Scanner[T]) Recall(rule Parser[T], pos int) *MemoEntry[T] {
+	m := s.memoLookup(pos, rule)
 
 	// If not growing a seed parse, just return what is stored in the memo table
 	head, headExists := s.heads[pos]
@@ -107,14 +133,20 @@ func (s *Scanner[T]) Recall(rule Parser[T], pos int) *MemoEntry[T] {
 
 	// Do not evaluate any rule that is not involved in this left recursion
 	if m == nil && !head.IsInvolved(rule) {
-		return &MemoEntry[T]{Position: s.position}
+		me := s.newMemoEntry()
+		me.Position = s.position
+		return me
 	}
 
 	// Allow involved rules to be evaluated, but only once, during a seed-growing iteration
 	if head.IsEvaluated(rule) {
 		delete(head.evalSet, rule)
 		node, ok := rule.Match(s)
-		return &MemoEntry[T]{Position: s.position, Ans: node, Ok: ok}
+		me := s.newMemoEntry()
+		me.Position = s.position
+		me.Ans = node
+		me.Ok = ok
+		return me
 	}
 
 	return m
@@ -180,7 +212,7 @@ var SkipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t
 
 // skipper: use nil, SkipWhitespaceRegex or your very own regex
 func NewScanner[T any](input string, skipper *regexp.Regexp) *Scanner[T] {
-	s := &Scanner[T]{input: input, position: 0, memoization: make([]map[Parser[T]]*MemoEntry[T], len(input)+1),
+	s := &Scanner[T]{input: input, position: 0, memoization: make([]*MemoEntry[T], len(input)+1),
 		heads: make(map[int]*Head[T])}
 	s.headpool.New = func() any {
 		return &Head[T]{nil, make(map[Parser[T]]bool), make(map[Parser[T]]bool)}
@@ -220,10 +252,11 @@ func (s *Scanner[T]) setPosition(n int) {
 }
 
 func (s *Scanner[T]) MatchRegexp(r *regexp.Regexp) *string {
-	matched := r.FindStringSubmatch(s.remainingInput)
-	if matched != nil {
-		s.move(len(matched[0]))
-		return &matched[0]
+	loc := r.FindStringIndex(s.remainingInput)
+	if loc != nil {
+		matched := s.remainingInput[:loc[1]]
+		s.move(loc[1])
+		return &matched
 	}
 
 	return nil

@@ -10,10 +10,12 @@ package packrat
 type KleeneParser[T any] struct {
 	callback func(string, ...T) T
 	subParser, sepParser Parser[T]
+	buf []T
+	depth int
 }
 
 func NewKleeneParser[T any](callback func(string, ...T) T, subparser Parser[T], sepparser Parser[T]) *KleeneParser[T] {
-	return &KleeneParser[T]{callback: callback, subParser: subparser, sepParser: sepparser}
+	return &KleeneParser[T]{callback: callback, subParser: subparser, sepParser: sepparser, buf: make([]T, 0, 8)}
 }
 
 func (p *KleeneParser[T]) Set(embedded Parser[T], separator Parser[T]) {
@@ -23,7 +25,13 @@ func (p *KleeneParser[T]) Set(embedded Parser[T], separator Parser[T]) {
 
 // Match matches the embedded parser or the empty string.
 func (p *KleeneParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
-	nodes := make([]T, 0, 8)
+	var nodes []T
+	if p.depth == 0 {
+		nodes = p.buf[:0]
+	} else {
+		nodes = make([]T, 0, 8)
+	}
+	p.depth++
 	start := s.position
 
 	i := 0
@@ -46,6 +54,12 @@ func (p *KleeneParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		lastValidPosition = s.position
 	}
 	s.setPosition(lastValidPosition)
+
+	// grow buf for next time if outermost call
+	if p.depth == 1 && cap(nodes) > cap(p.buf) {
+		p.buf = nodes[:0]
+	}
+	p.depth--
 
 	if len(nodes) == 0 {
 		return Node[T]{Payload: p.callback("")}, true
