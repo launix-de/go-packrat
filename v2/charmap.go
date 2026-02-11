@@ -45,10 +45,20 @@ func parserFirstBytes[T any](p Parser[T], visited map[any]bool) (bytes [256]bool
 		return bytes, eof
 
 	case *AndParser[T]:
-		if len(pp.subParser) > 0 {
-			return parserFirstBytes[T](pp.subParser[0], visited)
+		// Walk children: if a child can match empty, also include the
+		// next child's first bytes (because the empty-matching child
+		// may be skipped and the successor determines the first byte).
+		for _, child := range pp.subParser {
+			cb, ceof := parserFirstBytes[T](child, visited)
+			for i := range bytes {
+				bytes[i] = bytes[i] || cb[i]
+			}
+			if !ceof {
+				// This child is required, stop here
+				return bytes, false
+			}
 		}
-		fillAllBytes(&bytes)
+		// All children can match empty
 		return bytes, true
 
 	case *OrParser[T]:
@@ -69,17 +79,20 @@ func parserFirstBytes[T any](p Parser[T], visited map[any]bool) (bytes [256]bool
 		return parserFirstBytes[T](pp.mainParser, visited)
 
 	case *EmptyParser[T]:
-		fillAllBytes(&bytes)
+		// Matches empty — no active first bytes, but canMatchEOF=true
 		return bytes, true
 
 	case *KleeneParser[T]:
-		// Can match empty (zero repetitions)
-		fillAllBytes(&bytes)
-		return bytes, true
+		// Can match empty (zero repetitions). First bytes are from subParser
+		// (what it matches when non-empty). canMatchEOF=true lets parent
+		// And-nodes union successor bytes.
+		cb, _ := parserFirstBytes[T](pp.subParser, visited)
+		return cb, true
 
 	case *MaybeParser[T]:
-		fillAllBytes(&bytes)
-		return bytes, true
+		// Can match empty. First bytes are from subParser.
+		cb, _ := parserFirstBytes[T](pp.subParser, visited)
+		return cb, true
 
 	case *RestParser[T]:
 		fillAllBytes(&bytes)
@@ -106,15 +119,9 @@ func fillAllBytes(bytes *[256]bool) {
 // Returns true if the pattern can match empty input.
 func regexFirstBytes(rs string, caseInsensitive bool, bytes *[256]bool) bool {
 	if len(rs) == 0 {
-		fillAllBytes(bytes)
-		return true
+		return true // empty pattern matches empty
 	}
-	eof := regexFirstBytesAt(rs, 0, caseInsensitive, bytes)
-	if eof {
-		// Regex can match empty → any byte could follow
-		fillAllBytes(bytes)
-	}
-	return eof
+	return regexFirstBytesAt(rs, 0, caseInsensitive, bytes)
 }
 
 // regexFirstBytesAt analyzes the regex element starting at pos, fills bytes
@@ -254,12 +261,30 @@ func buildCharMap[T any](subParsers []Parser[T]) (cm *[256][]int, eofCandidates 
 	for idx, child := range subParsers {
 		visited := make(map[any]bool)
 		childBytes, canEOF := parserFirstBytes[T](child, visited)
-		if canEOF {
-			eofCandidates = append(eofCandidates, idx)
-		}
+
+		// Check if any byte is set
+		hasBytes := false
 		for b := 0; b < 256; b++ {
 			if childBytes[b] {
+				hasBytes = true
+				break
+			}
+		}
+
+		if canEOF || !hasBytes {
+			// Parser can match empty, or analysis was incomplete (e.g. left
+			// recursion broke the cycle with no bytes). Add to all entries.
+			if canEOF {
+				eofCandidates = append(eofCandidates, idx)
+			}
+			for b := 0; b < 256; b++ {
 				cm[b] = append(cm[b], idx)
+			}
+		} else {
+			for b := 0; b < 256; b++ {
+				if childBytes[b] {
+					cm[b] = append(cm[b], idx)
+				}
 			}
 		}
 	}

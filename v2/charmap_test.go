@@ -788,9 +788,11 @@ func TestParserFirstBytesEmpty(t *testing.T) {
 	if !eof {
 		t.Error("EmptyParser should match EOF")
 	}
+	// EmptyParser has no active first bytes (it matches empty).
+	// buildCharMap adds it to all 256 entries because canMatchEOF=true.
 	for i := 0; i < 256; i++ {
-		if !bytes[i] {
-			t.Errorf("EmptyParser should have all 256 bytes set, byte %d is false", i)
+		if bytes[i] {
+			t.Errorf("EmptyParser should have no active first bytes, byte %d is true", i)
 			break
 		}
 	}
@@ -807,5 +809,113 @@ func TestParserFirstBytesEnd(t *testing.T) {
 			t.Errorf("EndParser should have no bytes set, byte %d is true", i)
 			break
 		}
+	}
+}
+
+func TestParserFirstBytesKleeneInAnd(t *testing.T) {
+	// And(Kleene(digit), "end") should have first bytes: 0-9 (from Kleene's sub)
+	// AND 'e' (from "end", because Kleene can match empty).
+	cb := func(match string, a ...string) string { return match }
+	identity := func(s string) string { return s }
+
+	digitP := NewRegexParser(identity, `[0-9]+`, false, false)
+	kleene := NewKleeneParser(cb, digitP, nil)
+	endP := NewAtomParser[string]("end", "end", false, false)
+	and := NewAndParser(cb, kleene, endP)
+
+	bytes, eof := parserFirstBytes[string](and, make(map[any]bool))
+	if eof {
+		t.Error("And(Kleene, Atom) should not match EOF (Atom is required)")
+	}
+	// Digits from Kleene's sub-parser
+	for _, b := range "0123456789" {
+		if !bytes[byte(b)] {
+			t.Errorf("expected digit %q in first bytes", string(b))
+		}
+	}
+	// 'e' from "end" successor (because Kleene can match empty)
+	if !bytes['e'] {
+		t.Error("expected 'e' in first bytes (successor of empty Kleene)")
+	}
+	// 'a' should NOT be set
+	if bytes['a'] {
+		t.Error("'a' should not be in first bytes")
+	}
+}
+
+func TestParserFirstBytesEmptyInAnd(t *testing.T) {
+	// And(Empty, "hello") should have first bytes: 'h' (from "hello",
+	// because Empty always matches and its successor determines the byte).
+	cb := func(match string, a ...string) string { return match }
+
+	emptyP := NewEmptyParser[string]("empty")
+	helloP := NewAtomParser[string]("hello", "hello", false, false)
+	and := NewAndParser(cb, emptyP, helloP)
+
+	bytes, eof := parserFirstBytes[string](and, make(map[any]bool))
+	if eof {
+		t.Error("And(Empty, Atom) should not match EOF (Atom is required)")
+	}
+	if !bytes['h'] {
+		t.Error("expected 'h' in first bytes from successor 'hello'")
+	}
+	// Only 'h' should be set, not all 256
+	count := 0
+	for i := 0; i < 256; i++ {
+		if bytes[i] {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Errorf("expected exactly 1 byte set ('h'), got %d", count)
+	}
+}
+
+func TestParserFirstBytesKleenePrecise(t *testing.T) {
+	// KleeneParser returns sub-parser's first bytes + canMatchEOF=true.
+	cb := func(match string, a ...string) string { return match }
+
+	aP := NewAtomParser[string]("a", "a", false, false)
+	kleene := NewKleeneParser(cb, aP, nil)
+
+	bytes, eof := parserFirstBytes[string](kleene, make(map[any]bool))
+	if !eof {
+		t.Error("KleeneParser should report canMatchEOF=true")
+	}
+	if !bytes['a'] {
+		t.Error("KleeneParser should have 'a' from sub-parser")
+	}
+	// Should NOT have all 256 bytes — only 'a'
+	count := 0
+	for i := 0; i < 256; i++ {
+		if bytes[i] {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Errorf("expected exactly 1 byte set ('a'), got %d", count)
+	}
+}
+
+func TestParserFirstBytesMaybePrecise(t *testing.T) {
+	// MaybeParser returns sub-parser's first bytes + canMatchEOF=true.
+	aP := NewAtomParser[string]("a", "a", false, false)
+	maybe := NewMaybeParser[string]("none", aP)
+
+	bytes, eof := parserFirstBytes[string](maybe, make(map[any]bool))
+	if !eof {
+		t.Error("MaybeParser should report canMatchEOF=true")
+	}
+	if !bytes['a'] {
+		t.Error("MaybeParser should have 'a' from sub-parser")
+	}
+	count := 0
+	for i := 0; i < 256; i++ {
+		if bytes[i] {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Errorf("expected exactly 1 byte set ('a'), got %d", count)
 	}
 }
