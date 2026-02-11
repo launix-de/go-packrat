@@ -8,8 +8,10 @@
 package packrat
 
 type OrParser[T any] struct {
-	subParser []Parser[T]
-	charMap   *[256][]int
+	subParser     []Parser[T]
+	charMap       *[256][]int
+	eofCandidates []int
+	charMapBuilt  bool
 }
 
 func NewOrParser[T any](subparser ...Parser[T]) *OrParser[T] {
@@ -18,27 +20,31 @@ func NewOrParser[T any](subparser ...Parser[T]) *OrParser[T] {
 
 func (p *OrParser[T]) Set(embedded ...Parser[T]) {
 	p.subParser = embedded
+	p.charMap = nil
+	p.eofCandidates = nil
+	p.charMapBuilt = false
 }
 
-// SetCharMap installs a first-byte dispatch table. cm[b] contains the indices
-// into subParser that can match when the first non-whitespace byte is b.
-// When set, Match skips whitespace and only tries the listed candidates
-// instead of all sub-parsers sequentially.
+// SetCharMap installs a manual first-byte dispatch table, overriding auto-build.
 func (p *OrParser[T]) SetCharMap(cm [256][]int) {
 	p.charMap = &cm
+	p.charMapBuilt = true
 }
 
-// Match tries sub-parsers until one succeeds. If a charMap is set,
-// only the sub-parsers indexed by the first non-whitespace byte are tried.
+// Match tries sub-parsers until one succeeds. On first call, a charMap is
+// automatically built from the sub-parsers' first-byte sets. Only the
+// sub-parsers whose first byte matches the current input byte are tried.
 func (p *OrParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
-	if p.charMap != nil {
-		s.Skip()
-		if s.position >= len(s.input) {
-			return Node[T]{}, false
-		}
-		candidates := p.charMap[s.input[s.position]]
+	if !p.charMapBuilt {
+		p.charMap, p.eofCandidates = buildCharMap[T](p.subParser)
+		p.charMapBuilt = true
+	}
+
+	s.Skip()
+	if s.position >= len(s.input) {
+		// End of input: try only parsers that can match EOF
 		startPosition := s.position
-		for _, idx := range candidates {
+		for _, idx := range p.eofCandidates {
 			node, ok := s.applyRule(p.subParser[idx])
 			if ok {
 				return Node[T]{Payload: node.Payload}, true
@@ -48,14 +54,14 @@ func (p *OrParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		return Node[T]{}, false
 	}
 
+	candidates := p.charMap[s.input[s.position]]
 	startPosition := s.position
-	for _, c := range p.subParser {
-		node, ok := s.applyRule(c)
+	for _, idx := range candidates {
+		node, ok := s.applyRule(p.subParser[idx])
 		if ok {
 			return Node[T]{Payload: node.Payload}, true
 		}
 		s.setPosition(startPosition)
 	}
-
 	return Node[T]{}, false
 }

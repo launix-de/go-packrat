@@ -12,17 +12,18 @@ import (
 )
 
 type RegexParser[T any] struct {
-	callback func(string) T
-	regex    *regexp.Regexp
-	fastPath func(string) int
-	skipWs   bool
-	rs       string
+	callback        func(string) T
+	regex           *regexp.Regexp
+	fastPath        func(string) int
+	skipWs          bool
+	caseInsensitive bool
+	rs              string
 }
 
 func NewRegexParser[T any](callback func(string) T, rs string, caseInsensitive bool, skipWs bool) *RegexParser[T] {
 	fp := detectFastPath(rs, caseInsensitive)
 	if fp != nil {
-		return &RegexParser[T]{callback: callback, fastPath: fp, skipWs: skipWs, rs: rs}
+		return &RegexParser[T]{callback: callback, fastPath: fp, skipWs: skipWs, caseInsensitive: caseInsensitive, rs: rs}
 	}
 	prefix := ""
 	if caseInsensitive {
@@ -30,7 +31,7 @@ func NewRegexParser[T any](callback func(string) T, rs string, caseInsensitive b
 	}
 	prefix += "^"
 	r := regexp.MustCompile(prefix + rs)
-	return &RegexParser[T]{callback: callback, regex: r, skipWs: skipWs, rs: rs}
+	return &RegexParser[T]{callback: callback, regex: r, skipWs: skipWs, caseInsensitive: caseInsensitive, rs: rs}
 }
 
 // Regex matches only the given regexp. If skipWs is set to true, leading whitespace according to the scanner's skip regexp is skipped, but not matched by the parser.
