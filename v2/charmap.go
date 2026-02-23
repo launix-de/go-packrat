@@ -137,28 +137,24 @@ func regexFirstBytesAt(rs string, pos int, caseInsensitive bool, bytes *[256]boo
 	switch {
 	case rs[pos] == '(':
 		// Group: find matching close paren
-		depth := 1
-		i := pos + 1
-		for i < len(rs) && depth > 0 {
-			if rs[i] == '\\' && i+1 < len(rs) {
-				i += 2
-				continue
-			}
-			if rs[i] == '(' {
-				depth++
-			} else if rs[i] == ')' {
-				depth--
-			}
-			i++
-		}
-		// Check quantifier after group
-		if i < len(rs) && (rs[i] == '*' || rs[i] == '?') {
+		closePos := findGroupClose(rs, pos)
+		if closePos < 0 {
 			fillAllBytes(bytes)
 			return true
 		}
-		// Required group — conservative: all bytes
-		fillAllBytes(bytes)
-		return false
+		nextPos = closePos + 1
+
+		// Extract group content, skip ?: prefix for non-capturing groups
+		groupContent := rs[pos+1 : closePos]
+		if len(groupContent) >= 2 && groupContent[0] == '?' && groupContent[1] == ':' {
+			groupContent = groupContent[2:]
+		}
+
+		// Split by | at depth 0 and analyze each alternative
+		alts := splitAlternatives(groupContent)
+		for _, alt := range alts {
+			regexFirstBytesAt(alt, 0, caseInsensitive, &elemBytes)
+		}
 
 	case rs[pos] == '[':
 		content, end := extractBracketExpr(rs, pos)
@@ -252,6 +248,55 @@ func regexFirstBytesAt(rs string, pos int, caseInsensitive bool, bytes *[256]boo
 	}
 
 	return false
+}
+
+// findGroupClose finds the position of the closing ) for a group starting at pos.
+// Returns -1 if not found.
+func findGroupClose(rs string, pos int) int {
+	depth := 1
+	i := pos + 1
+	for i < len(rs) && depth > 0 {
+		if rs[i] == '\\' && i+1 < len(rs) {
+			i += 2
+			continue
+		}
+		if rs[i] == '(' {
+			depth++
+		} else if rs[i] == ')' {
+			depth--
+			if depth == 0 {
+				return i
+			}
+		}
+		i++
+	}
+	return -1
+}
+
+// splitAlternatives splits a regex string by | at depth 0.
+func splitAlternatives(rs string) []string {
+	var alts []string
+	depth := 0
+	start := 0
+	for i := 0; i < len(rs); i++ {
+		if rs[i] == '\\' && i+1 < len(rs) {
+			i++
+			continue
+		}
+		switch rs[i] {
+		case '(':
+			depth++
+		case ')':
+			depth--
+		case '|':
+			if depth == 0 {
+				alts = append(alts, rs[start:i])
+				start = i + 1
+			}
+		}
+	}
+	alts = append(alts, rs[start:])
+	return alts
 }
 
 // buildCharMap constructs the character dispatch map for an OrParser.

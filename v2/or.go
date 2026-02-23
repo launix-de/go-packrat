@@ -40,28 +40,30 @@ func (p *OrParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
 		p.charMapBuilt = true
 	}
 
+	origPosition := s.position
 	s.Skip()
+
 	if s.position >= len(s.input) {
-		// End of input: try only parsers that can match EOF
-		startPosition := s.position
 		for _, idx := range p.eofCandidates {
 			node, ok := s.applyRule(p.subParser[idx])
 			if ok {
 				return Node[T]{Payload: node.Payload}, true
 			}
-			s.setPosition(startPosition)
+			s.setPosition(s.position)
 		}
+		s.setPosition(origPosition)
 		return Node[T]{}, false
 	}
 
 	candidates := p.charMap[s.input[s.position]]
-	startPosition := s.position
+	skipPosition := s.position
 	for _, idx := range candidates {
 		node, ok := s.applyRule(p.subParser[idx])
 		if ok {
 			return Node[T]{Payload: node.Payload}, true
 		}
-		s.setPosition(startPosition)
+		s.setPosition(skipPosition)
 	}
+	s.setPosition(origPosition)
 	return Node[T]{}, false
 }

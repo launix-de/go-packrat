@@ -128,4 +128,89 @@ func TestAllocScaling(t *testing.T) {
 	}
 	tuples.NoMemo = false
 	valueList.NoMemo = false
+
+	// --- SELECT benchmark ---
+	fmt.Println("\n=== SELECT a,b,c,... FROM t ===")
+
+	selectP := NewAtomParser[string]("SELECT", "SELECT", true, true)
+	fromP := NewAtomParser[string]("FROM", "FROM", true, true)
+	ident := NewRegexParser(identity, `[a-zA-Z_][a-zA-Z0-9_]*`, false, true)
+	commaWs := NewAtomParser[string](",", ",", false, true)
+	colList := NewManyParser(cb, ident, commaWs)
+	selectStmt := NewAndParser(cb, selectP, colList, fromP, ident)
+
+	fmt.Println("--- NewScanner ---")
+	for _, n := range []int{3, 10, 50, 200, 1000} {
+		input := "SELECT "
+		for i := 0; i < n; i++ {
+			if i > 0 {
+				input += ","
+			}
+			input += fmt.Sprintf("col_%d", i)
+		}
+		input += " FROM my_table"
+		result := testing.Benchmark(func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				sc := NewScanner[string](input, SkipWhitespaceRegex)
+				_, err := Parse(selectStmt, sc)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+		fmt.Printf("cols=%4d  len=%6d  allocs=%4d  bytes=%8d  ns/op=%8d\n",
+			n, len(input), result.AllocsPerOp(), result.AllocedBytesPerOp(), result.NsPerOp())
+	}
+
+	fmt.Println("--- Scanner.Reset ---")
+	scannerS := NewScanner[string]("", SkipWhitespaceRegex)
+	for _, n := range []int{3, 10, 50, 200, 1000} {
+		input := "SELECT "
+		for i := 0; i < n; i++ {
+			if i > 0 {
+				input += ","
+			}
+			input += fmt.Sprintf("col_%d", i)
+		}
+		input += " FROM my_table"
+		result := testing.Benchmark(func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				scannerS.Reset(input, SkipWhitespaceRegex)
+				_, err := Parse(selectStmt, scannerS)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+		fmt.Printf("cols=%4d  len=%6d  allocs=%4d  bytes=%8d  ns/op=%8d\n",
+			n, len(input), result.AllocsPerOp(), result.AllocedBytesPerOp(), result.NsPerOp())
+	}
+
+	fmt.Println("--- Scanner.Reset + NoMemo ---")
+	colList.NoMemo = true
+	for _, n := range []int{3, 10, 50, 200, 1000} {
+		input := "SELECT "
+		for i := 0; i < n; i++ {
+			if i > 0 {
+				input += ","
+			}
+			input += fmt.Sprintf("col_%d", i)
+		}
+		input += " FROM my_table"
+		result := testing.Benchmark(func(b *testing.B) {
+			b.ReportAllocs()
+			for i := 0; i < b.N; i++ {
+				scannerS.Reset(input, SkipWhitespaceRegex)
+				_, err := Parse(selectStmt, scannerS)
+				if err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+		fmt.Printf("cols=%4d  len=%6d  allocs=%4d  bytes=%8d  ns/op=%8d\n",
+			n, len(input), result.AllocsPerOp(), result.AllocedBytesPerOp(), result.NsPerOp())
+	}
+	colList.NoMemo = false
 }
