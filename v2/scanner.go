@@ -1,5 +1,5 @@
 /*
-	(c) 2019, 2023 Launix, Inh. Carl-Philip Hänsch
+	(c) 2019, 2023, 2026 Launix, Inh. Carl-Philip Hänsch
 	Author: Tim Kluge
 	Author: Carl-Philip Hänsch
 
@@ -9,15 +9,15 @@
 package packrat
 
 import (
-	"sync"
 	"regexp"
+	"sync"
 	"unicode"
 )
 
 type MemoEntry[T any] struct {
 	Lr  *Lr[T]
 	Ans Node[T]
-	Ok bool
+	Ok  bool
 
 	Position int
 }
@@ -51,24 +51,26 @@ func (h *Head[T]) IsEvaluated(rule Parser[T]) bool {
 }
 
 type Lr[T any] struct {
-	seed Node[T]
+	seed   Node[T]
 	seedOk bool
-	rule Parser[T]
-	head *Head[T]
-	next *Lr[T]
+	rule   Parser[T]
+	head   *Head[T]
+	next   *Lr[T]
 }
 
 type Scanner[T any] struct {
-	input           string
-	remainingInput  string
-	position        int
-	memoization     []map[Parser[T]]*MemoEntry[T]
-	heads           map[int]*Head[T]
-	invocationStack *Lr[T]
-	breaks          []bool
+	input                   string
+	remainingInput          string
+	position                int
+	memoization             []map[Parser[T]]*MemoEntry[T]
+	heads                   map[int]*Head[T]
+	invocationStack         *Lr[T]
+	breaks                  []bool
+	terminalFailurePosition int
+	failedTerminals         []Parser[T]
 
-	headpool        sync.Pool
-	lrPool          sync.Pool
+	headpool sync.Pool
+	lrPool   sync.Pool
 
 	skipRegex *regexp.Regexp
 }
@@ -179,9 +181,9 @@ var SkipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t
 
 // skipper: use nil, SkipWhitespaceRegex or your very own regex
 func NewScanner[T any](input string, skipper *regexp.Regexp) *Scanner[T] {
-	s := &Scanner[T]{input: input, position: 0,
+	s := &Scanner[T]{input: input, position: 0, terminalFailurePosition: -1,
 		memoization: make([]map[Parser[T]]*MemoEntry[T], len(input)+1),
-		heads: make(map[int]*Head[T])}
+		heads:       make(map[int]*Head[T])}
 	s.headpool.New = func() any {
 		return &Head[T]{nil, make(map[Parser[T]]bool), make(map[Parser[T]]bool)}
 	}
@@ -214,6 +216,8 @@ func (s *Scanner[T]) Reset(input string, skipper *regexp.Regexp) {
 	s.remainingInput = input
 	s.skipRegex = skipper
 	s.invocationStack = nil
+	s.terminalFailurePosition = -1
+	s.failedTerminals = s.failedTerminals[:0]
 
 	// Clear heads map (reuse the map object)
 	clear(s.heads)

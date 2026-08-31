@@ -1,5 +1,5 @@
 /*
-	(c) 2019 Launix, Inh. Carl-Philip Hänsch
+	(c) 2019, 2026 Launix, Inh. Carl-Philip Hänsch
 	Author: Tim Kluge
 
 	Dual licensed with custom aggreements or GPLv3
@@ -20,6 +20,17 @@ type Parser[T any] interface {
 
 func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 	startPosition := s.position
+	// Terminals cannot participate in left recursion. Avoiding the memo table
+	// here removes its map and LR-frame overhead from the common token path.
+	// Failed terminals are recorded separately so Parse keeps its diagnostics.
+	switch rule.(type) {
+	case *AtomParser[T], *RegexParser[T], *EmptyParser[T], *EndParser[T], *RestParser[T]:
+		node, ok := rule.Match(s)
+		if !ok {
+			s.recordTerminalFailure(startPosition, rule)
+		}
+		return node, ok
+	}
 
 	memmap := s.memoization[startPosition]
 	if memmap == nil {
@@ -65,7 +76,7 @@ func (s *Scanner[T]) applyRule(rule Parser[T]) (Node[T], bool) {
 var emptyString = ""
 
 type Node[T any] struct {
-	Payload  T
+	Payload T
 }
 
 type ParserError[T any] struct {
@@ -176,18 +187,7 @@ func ParsePartial[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *Pa
 		return node, nil
 	}
 
-	maxPos := 0
-	var failedParsers []Parser[T]
-	for index := len(originalScanner.input); index >= 0; index-- {
-		m := originalScanner.memoization[index]
-		if len(m) > 0 {
-			maxPos = index
-			for k := range m {
-				failedParsers = append(failedParsers, k)
-			}
-			break
-		}
-	}
+	maxPos, failedParsers := originalScanner.failureDetails()
 
 	consumed := originalScanner.input[:maxPos]
 	line := strings.Count(consumed, "\n") + 1
@@ -215,18 +215,7 @@ func Parse[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *ParserErr
 		return node, nil
 	}
 
-	maxPos := 0
-	var failedParsers []Parser[T]
-	for index := len(originalScanner.input); index >= 0; index-- {
-		m := originalScanner.memoization[index]
-		if len(m) > 0 {
-			maxPos = index
-			for k := range m {
-				failedParsers = append(failedParsers, k)
-			}
-			break
-		}
-	}
+	maxPos, failedParsers := originalScanner.failureDetails()
 
 	consumed := originalScanner.input[:maxPos]
 	line := strings.Count(consumed, "\n") + 1
@@ -238,4 +227,47 @@ func Parse[T any](p Parser[T], originalScanner *Scanner[T]) (Node[T], *ParserErr
 	e := &ParserError[T]{FailedParsers: failedParsers, Parser: p, Line: line, Column: column, Position: maxPos, Input: originalScanner.input}
 
 	return Node[T]{}, e
+}
+
+func (s *Scanner[T]) recordTerminalFailure(position int, parser Parser[T]) {
+	if position > s.terminalFailurePosition {
+		s.terminalFailurePosition = position
+		s.failedTerminals = append(s.failedTerminals[:0], parser)
+		return
+	}
+	if position != s.terminalFailurePosition {
+		return
+	}
+	for _, failed := range s.failedTerminals {
+		if failed == parser {
+			return
+		}
+	}
+	s.failedTerminals = append(s.failedTerminals, parser)
+}
+
+func (s *Scanner[T]) failureDetails() (int, []Parser[T]) {
+	maxPos := -1
+	var failedParsers []Parser[T]
+	for index := len(s.input); index >= 0; index-- {
+		memo := s.memoization[index]
+		if len(memo) == 0 {
+			continue
+		}
+		maxPos = index
+		for parser := range memo {
+			failedParsers = append(failedParsers, parser)
+		}
+		break
+	}
+	if s.terminalFailurePosition > maxPos {
+		return s.terminalFailurePosition, append([]Parser[T](nil), s.failedTerminals...)
+	}
+	if s.terminalFailurePosition == maxPos {
+		failedParsers = append(failedParsers, s.failedTerminals...)
+	}
+	if maxPos < 0 {
+		maxPos = 0
+	}
+	return maxPos, failedParsers
 }

@@ -1,5 +1,5 @@
 /*
-	(c) 2019 Launix, Inh. Carl-Philip Hänsch
+	(c) 2019-2026 Launix, Inh. Carl-Philip Hänsch
 	Author: Tim Kluge
 
 	Dual licensed with custom aggreements or GPLv3
@@ -7,11 +7,14 @@
 
 package packrat
 
+import "sync"
+
 type OrParser[T any] struct {
 	subParser     []Parser[T]
 	charMap       *[256][]int
 	eofCandidates []int
 	charMapBuilt  bool
+	charMapOnce   sync.Once
 }
 
 func NewOrParser[T any](subparser ...Parser[T]) *OrParser[T] {
@@ -23,22 +26,26 @@ func (p *OrParser[T]) Set(embedded ...Parser[T]) {
 	p.charMap = nil
 	p.eofCandidates = nil
 	p.charMapBuilt = false
+	p.charMapOnce = sync.Once{}
 }
 
 // SetCharMap installs a manual first-byte dispatch table, overriding auto-build.
 func (p *OrParser[T]) SetCharMap(cm [256][]int) {
 	p.charMap = &cm
 	p.charMapBuilt = true
+	p.charMapOnce.Do(func() {})
 }
 
 // Match tries sub-parsers until one succeeds. On first call, a charMap is
 // automatically built from the sub-parsers' first-byte sets. Only the
 // sub-parsers whose first byte matches the current input byte are tried.
 func (p *OrParser[T]) Match(s *Scanner[T]) (Node[T], bool) {
-	if !p.charMapBuilt {
-		p.charMap, p.eofCandidates = buildCharMap[T](p.subParser)
-		p.charMapBuilt = true
-	}
+	p.charMapOnce.Do(func() {
+		if !p.charMapBuilt {
+			p.charMap, p.eofCandidates = buildCharMap[T](p.subParser)
+			p.charMapBuilt = true
+		}
+	})
 
 	origPosition := s.position
 	s.Skip()
