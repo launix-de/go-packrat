@@ -176,8 +176,10 @@ func (s *Scanner[T]) LrAnswer(rule Parser[T], pos int, m *MemoEntry[T]) (Node[T]
 	return s.GrowLr(rule, pos, m, h)
 }
 
-var SkipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
-var SkipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t ]+)+") // regex for comments
+var skipWhitespaceRegex = regexp.MustCompile("^[\r\n\t ]+")
+var SkipWhitespaceRegex = skipWhitespaceRegex
+var skipWhitespaceAndCommentsRegex = regexp.MustCompile("^(?:/\\*.*?\\*/|[\r\n\t ]+)+")
+var SkipWhitespaceAndCommentsRegex = skipWhitespaceAndCommentsRegex // regex for comments
 
 // skipper: use nil, SkipWhitespaceRegex or your very own regex
 func NewScanner[T any](input string, skipper *regexp.Regexp) *Scanner[T] {
@@ -282,9 +284,17 @@ func (s *Scanner[T]) MatchRegexp(r *regexp.Regexp) *string {
 }
 
 func (s *Scanner[T]) Skip() {
-	if s.skipRegex != nil && s.position < len(s.input) &&
-		(s.input[s.position] <= ' ' || s.input[s.position] == '/') {
-		s.MatchRegexp(s.skipRegex)
+	if s.skipRegex == nil || s.position == len(s.input) {
+		return
+	}
+	// Only the built-in skippers have this known prefix alphabet. Custom
+	// patterns may begin with any character, including multibyte runes.
+	if (s.skipRegex == skipWhitespaceRegex || s.skipRegex == skipWhitespaceAndCommentsRegex) &&
+		s.input[s.position] > ' ' && s.input[s.position] != '/' {
+		return
+	}
+	if match := s.skipRegex.FindStringIndex(s.remainingInput); match != nil && match[0] == 0 {
+		s.move(match[1])
 	}
 }
 
